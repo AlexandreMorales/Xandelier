@@ -4,7 +4,8 @@
 /*
 Parametros:
 	obAjax: Objeto com as configurações do ajax:
-		_path: (String) URL do ajax;
+		_path: (String) URL do ajax
+                (tem que estar pré-setado a váriavel window.rootUrl que diz aonde a aplicação se encontra);
 		_type: (String) Tipo de requisição em caixa alta(POST, GET, PUT, DELETE);
 		_dataType: (String OU Boolean) Tipo de data a ser enviado pelo ajax, 
 				se for false não irá adicionar Data-type no header do request,
@@ -25,23 +26,22 @@ Parametros:
 */
 //Ajax com XMLHttpRequest
 var AjaxPuro = function (obAjax) {
-    var path = ((location.hostname === "localhost" || location.pathname === "/") ? 
-    			"/" : "/" + location.pathname.split("/")[1] + "/") + obAjax._path,
+    var path = window.rootUrl + obAjax._path,
         POST = obAjax._type === "POST",
         _arguments,
         obj = obAjax._arguments;
 
     if (obj) {
-		switch(getType(obj)){
-			case 'object':
-				_arguments = Object.keys(obj).reduce((args, attr) => args + 
-					(getType(obj[attr]) === "array" ? 
+        switch (getType(obj)) {
+            case 'object':
+                _arguments = Object.keys(obj).reduce((args, attr) => args +
+					(getType(obj[attr]) === "array" ?
 						obj[attr].reduce((indices, el) => indices + attr + "=" + el + "&", "") :
 	                    attr + "=" + obj[attr] + "&"), POST ? "" : "?");
-				break;
-			case 'string': _arguments = (POST ? "" : "/") + obj; break;
-			default: _arguments = obj; break;
-		}
+                break;
+            case 'string': _arguments = (POST ? "" : "/") + obj; break;
+            default: _arguments = obj; break;
+        }
 
         if (!POST) path += _arguments;
     }
@@ -73,8 +73,8 @@ var AjaxPuro = function (obAjax) {
     xhttp.open(obAjax._type || "GET", path);
     if (POST) {
         if (obAjax._dataType !== false) xhttp.setRequestHeader("Data-type", obAjax._dataType || 'json');
-        if (obAjax._contentType !== false) 
-        	xhttp.setRequestHeader("Content-type", 
+        if (obAjax._contentType !== false)
+            xhttp.setRequestHeader("Content-type",
         		obAjax._contentType || 'application/x-www-form-urlencoded; charset=UTF-8');
         xhttp.send(_arguments);
     } else xhttp.send();
@@ -83,7 +83,6 @@ var AjaxPuro = function (obAjax) {
 /*
 Parametros:
 	obj: Objeto enviado;
-
 Retorno: (String) O tipo do objeto em minúsuculo;
 */
 //Pega o tipo do objeto mandado
@@ -101,12 +100,12 @@ Parametros:
 //Processa array usando setTimeout
 function processArray(obj) {
     setTimeout(function () {
-    	if(obj._percent)
-        	renderizaPorcentagem(obj._percent, 100 - ((obj._array.length * 100) / obj._length));
+        if (obj._percent)
+            renderizaPorcentagem(obj._percent, 100 - ((obj._array.length * 100) / obj._length));
         (obj._array.splice(0, Math.ceil(obj._length * 0.1))).forEach(x => obj._process(x));
         if (obj._array.length > 0)
             setTimeout(processArray(obj));
-        else if(obj._done)
+        else if (obj._done)
             obj._done();
     });
 };
@@ -115,7 +114,6 @@ function processArray(obj) {
 Parametros:
 	array1: (Array) Primeiro array;
 	array2: (Array) Segundo array;
-
 Retorno: (Array) Array contendo a diferença entre os dois arrays enviados;
 */
 //Retorna a diferença entre dois arrays.
@@ -127,7 +125,6 @@ function diferencaArrays(array1, array2) {
 /*
 Parametros:
 	array: (Array) Array a ser embaralhado;
-
 Retorno: (Array) Array embaralhado;
 */
 //Embaralha array
@@ -177,12 +174,11 @@ Parametros:
 	el: (String OU Number) elemento a ser buscado;
 	att: (String) Atributo de comparação entre os elementos do array,
 			se não for enviada então a regra será comparar elemento por elemento;
-
 Retorno: (Array) Array com os elementos filtrados pela busca;
 */
 //Retorna lista com itens contidos na lista recebida de acordo com a string recebida.
-var search = (selection, el, att) => 
-	selection.filter((d) => (att ? d[att] : d).toUpperCase().indexOf(el.toUpperCase()) != -1);
+var search = (selection, el, att) =>
+    selection.filter((d) => (att ? d[att] : d).toUpperCase().indexOf(el.toUpperCase()) != -1);
 
 /* Retorno: (String) O nome do browser atual; */
 //Pega o browser atual
@@ -204,13 +200,10 @@ function getBrowser() {
 // REMOVE ACENTOS
 /*
    Copyright 2015 rdllopes http://stackoverflow.com/users/1879686/rdllopes from http://stackoverflow.com/questions/990904/javascript-remove-accents-diacritics-in-strings
-
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
-
    http://www.apache.org/licenses/LICENSE-2.0
-
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -335,7 +328,6 @@ Parametros:
 			se não for enviada então a regra será comparar elemento por elemento;
 	map: (Boolean) Se for verdadeiro então retornará o array resultado da regra enviada,
 			se não então retornára o próprio array com elementos únicos;
-
 Retorno: (Array) O próprio array com elementos únicos de acordo com a regra enviada;
 */
 //Traz um array de elementos únicos
@@ -354,7 +346,6 @@ Array.prototype.unique = function (fun, map) {
 /*
 Parametros:
 	element: Elemento ou sequência de elementos a ser verificado;
-
 Retorno: (Boolean) Se o elemento enviado está no próprio array;
 */
 //Verifica se o elemento está no array
@@ -372,7 +363,6 @@ Array.prototype.contains = function (element) {
 /*
 Parametros:
 	className: (String) Classe a ser verificada;
-
 Retorno: (Boolean) Se o próprio elemento possui classe enviada;
 */
 //Verifica se elemento possui a classe enviada
@@ -498,13 +488,13 @@ function getElement(selector, element, include) {
             break;
     }
     return getElement(selectors, (include) ? element.filter(auxFilter) :
-            (getType(element) === "array") ? 
+            (getType(element) === "array") ?
             	element.reduce((aux, el) => aux.concat(auxFunc(el)), []) : auxFunc(element));
 };
 
 var showObject = {
-	valueShowBool: false,
-	sameElement: {}
+    valueShowBool: false,
+    sameElement: {}
 };
 /*
 Parametros:
@@ -516,7 +506,7 @@ Parametros:
 //Mostra ou esconde elementos
 function show(element, value, delay) {
     showObject.valueShowBool = value;
-    element = (getType(element) === "string") ? 
+    element = (getType(element) === "string") ?
     			document.getElementById(element) : element;
     showObject.sameElement = element;
     if (value === undefined)
@@ -550,13 +540,14 @@ Parametros:
 var createElement = (el) => document.createElement(el);
 
 //Renderiza porcentagem do bootstrap
-var renderizaPorcentagem = (idProcess, value) => 
-	document.getElementById(idProcess).config({ 
-		Swidth: value + "%", innerHTML: Math.round(value) + "%", "aria-valuenow": value 
-	});
+var renderizaPorcentagem = (idProcess, value) =>
+    document.getElementById(idProcess).config({
+        Swidth: value + "%", innerHTML: Math.round(value) + "%", "aria-valuenow": value
+    });
 
 //Pega o id do radio button selecionado de um grupo
-var getCheckedRadioId = name => document.getElementsByName(name).filter(x => x.checked)[0].id;
+var getCheckedRadioId = name =>
+    document.getElementsByName(name).toArray().filter(x => x.checked)[0].id;
 
 //Pega todos os ids dos radio buttons selecionados de uma div
 var getAllCheckedRadioId = div => getElement("#" + div + ":input").reduce(function (array, element) {
@@ -587,45 +578,71 @@ function getLayout(path, conatiner, fDone) {
 
 //MODALS
 function createModal(id, modalConfig) {
-    var divNone = createElement("DIV").config({ Sdisplay: "none" }),
+    var divNone = document.createElement("DIV").config({ Sdisplay: "none" }),
     	closeModal = () => toggleModal(id, false);
 
-    modalConfig = modalConfig || {}; modalConfig._configHead = modalConfig._configHead || {};
+    modalConfig = modalConfig || {};;
     modalConfig._XBtn = modalConfig._XBtn === false ? divNone :
-        createElement('BUTTON').config({ className: "close", Fclick: closeModal, innerHTML: "×" });
+        document.createElement('BUTTON').config({ className: "close", Fclick: closeModal, innerHTML: "×" });
 
     modalConfig._head = modalConfig._head || divNone;
     modalConfig._body = modalConfig._body || divNone;
     modalConfig._foot = modalConfig._foot === undefined ?
-        createElement('BUTTON').config({ className: "btn btn-default", Fclick: closeModal, innerHTML: "Fechar" }) :
+        document.createElement('BUTTON').config({ className: "btn btn-default", Fclick: closeModal, innerHTML: "Fechar" }) :
         modalConfig._foot || divNone;
 
     document.getElementsByTagName("body")[0]
-        .append(createElement('DIV').config({ id: id, className: "modal fade" })
-            .append(createElement('DIV').addClass("modal-dialog")
-                .append(createElement('DIV').addClass("modal-content " + (modalConfig._contentClass || ""))
-                    .append(createElement('DIV').addClass("modal-header")
+        .append(document.createElement('DIV').config({ id: id, className: "modal fade" })
+            .append(document.createElement('DIV').addClass("modal-dialog")
+                .append(document.createElement('DIV').addClass("modal-content " + (modalConfig._contentClass || ""))
+                    .append(document.createElement('DIV').config(modalConfig._configHead || {}).addClass("modal-header")
                         .append(modalConfig._XBtn)
-                        .append(createElement('h4').config(modalConfig._configHead).addClass("modal-title"))
+                        .append(document.createElement('h4').config(modalConfig._configTitle || {}).addClass("modal-title"))
                         .append(modalConfig._head))
-                    .append(createElement('DIV').config(modalConfig._configBody || {}).addClass("modal-body")
+                    .append(document.createElement('DIV').config(modalConfig._configBody || {}).addClass("modal-body")
                     	.append(modalConfig._body))
-                    .append(createElement('DIV').config(modalConfig._configFoot || {}).addClass("modal-footer")
+                    .append(document.createElement('DIV').config(modalConfig._configFoot || {}).addClass("modal-footer")
                     	.append(modalConfig._foot)))));
+};
+function createConfirm(text, func) {
+    if (getElement("#confirmModal")) getElement("#confirmModal").remove();
+    createModal("confirmModal", {
+        _XBtn: false,
+        _configHead: { Sdisplay: "none" },
+        _body: document.createElement("DIV").config({ innerHTML: text }),
+        _foot: document.createElement('DIV')
+              .append(document.createElement('BUTTON').config({
+                  className: "btn btn-default", Fclick: function () {
+                      func(true); toggleModal("confirmModal", false);
+                  }, innerHTML: "OK"
+              }))
+              .append(document.createElement('BUTTON').config({
+                  className: "btn btn-default", Fclick: function () {
+                      func(false); toggleModal("confirmModal", false);
+                  }, innerHTML: "Cancela"
+              }))
+    });
+
+    toggleModal("confirmModal", true, { _clickOut: false });
+
+    return getElement("#confirmModal");
 };
 function toggleModal(id, content, modalConfig) {
     modalConfig = modalConfig || {};
-    var element = document.getElementById(id);
-    show(element[(content ? "add" : "remove") + "Class"]("in"), content, 3);
+    var element = document.getElementById(id),
+        divBackdrop = document.getElementsByClassName("modal-backdrop fade in")[0];
+    if (!element) return;
+    show(element[(content ? "add" : "remove") + "Class"]("in"), content, modalConfig._delay || 3);
     if (modalConfig._clickOut !== false)
         document.body[(content ? "add" : "remove") + "EventListener"]('click', clickOutsideModal);
 
-    if (content) 
-    	document.getElementsByTagName("body")[0].append(createElement("DIV").addClass("modal-backdrop fade in"));
-    else {
-        if (element.onHideModal)
-            element.onHideModal();
-        document.getElementsByClassName("modal-backdrop fade in")[0].remove();
+
+    if (content) {
+        if (!divBackdrop)
+            document.getElementsByTagName("body")[0].appendChild(document.createElement("DIV").addClass("modal-backdrop fade in"));
+    } else {
+        if (element.onHideModal) element.onHideModal();
+        if (divBackdrop) divBackdrop.remove();
     }
 };
 function clickOutsideModal(e) {
@@ -635,15 +652,12 @@ function clickOutsideModal(e) {
 
 //TITLE PERSONALIZADO
 var PersonalizeTitle = {
-    titleName: "personalizeTitle",
-    titleEl: null
+    titleName: "",
+    titleEl: null,
+    titleDelay: 0
 };
-PersonalizeTitle.iniciaTitle = function (_style) {
-    PersonalizeTitle.titleEl = document.getElementById(PersonalizeTitle.titleName) ||
-        document.getElementsByTagName("body")[0].appendChild(document.createElement("div").config({ 
-        	id: PersonalizeTitle.titleName 
-        }));
-
+PersonalizeTitle.iniciaTitle = function (titleConfig) {
+    titleConfig = titleConfig || {};
     var style = {
         padding: "3px",
         border: "1px solid #666",
@@ -656,14 +670,17 @@ PersonalizeTitle.iniciaTitle = function (_style) {
         position: "absolute",
         "z-index": 1000
     };
+    if (titleConfig._style) Object.keys(titleConfig._style).forEach(att => style[att] = titleConfig._style[att]);
 
-    if (_style)
-        Object.keys(_style).forEach(att => style[att] = _style[att]);
+    PersonalizeTitle.titleDelay = titleConfig._delay || 20;
+    PersonalizeTitle.titleName = titleConfig._name || "personalizeTitle";
+    PersonalizeTitle.titleEl = document.getElementById(PersonalizeTitle.titleName) ||
+        document.getElementsByTagName("body")[0].appendChild(document.createElement("div").config({
+            id: PersonalizeTitle.titleName, style: style
+        }));
 
-    PersonalizeTitle.titleEl.config({ style: style });
-
-    var getPlace = evt => PersonalizeTitle.titleEl.config({ 
-    	style: { left: (evt.pageX + 12) + "px", top: (evt.pageY + 20) + "px" } 
+    var getPlace = evt => PersonalizeTitle.titleEl.config({
+        style: { left: (evt.pageX + 12) + "px", top: (evt.pageY + 20) + "px" }
     });
     document.onmousemove = getPlace;
     document.addEventListener(getBrowser() !== "firefox" ? "mousewheel" : "DOMMouseScroll", getPlace, false);
@@ -679,19 +696,19 @@ PersonalizeTitle.refreshTitle = function () {
     });
 
     var parent;
-    document.getElementsByTagName("title").forEach(function (el) {
+    document.getElementsByTagName("title").toArray().forEach(function (el) {
         parent = el.parentElement;
         if (parent.tagName !== "HEAD") {
             parent.setAttribute(PersonalizeTitle.titleName, el.innerHTML);
             el.remove();
-            parent.onmouseover = function () { 
-            	PersonalizeTitle.showTitle(parent.getAttribute(PersonalizeTitle.titleName)) 
+            parent.onmouseover = function () {
+                PersonalizeTitle.showTitle(parent.getAttribute(PersonalizeTitle.titleName))
             };
             parent.onmouseout = function () { PersonalizeTitle.showTitle() };
         }
     });
 };
 PersonalizeTitle.showTitle = function (text) {
-    text ? show(PersonalizeTitle.titleEl, true, 20) : show(PersonalizeTitle.titleEl, false);
+    text ? show(PersonalizeTitle.titleEl, true, PersonalizeTitle.titleDelay) : show(PersonalizeTitle.titleEl, false);
     PersonalizeTitle.titleEl.config({ innerHTML: text || "" });
 };
