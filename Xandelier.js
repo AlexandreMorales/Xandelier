@@ -3,22 +3,21 @@
 
 /*
 Parametros:
-	obAjax: Objeto com as configurações do ajax:
-		_path: (String) URL do ajax 
-				(tem que estar pré-setado a váriavel window.rootUrl que diz aonde a aplicação se encontra);
-		_type: (String) Tipo de requisição em caixa alta(POST, GET, PUT, DELETE);
+	obAjax: Objeto com as configuraÃ§Ãµes do ajax:
+		_path: (String) URL do ajax;
+		_type: (String) Tipo de requisiÃ§Ã£o em caixa alta(POST, GET, PUT, DELETE);
 		_dataType: (String OU Boolean) Tipo de data a ser enviado pelo ajax, 
-				se for false não irá adicionar Data-type no header do request,
-				se não for enviada o valor default é 'json';
+				se for false nÃ£o irÃ¡ adicionar Data-type no header do request,
+				se nÃ£o for enviada o valor default Ã© 'json';
 		_contentType: (String OU Boolean) Tipo de conteudo a ser enviado pelo ajax, 
-				se for false não irá adicionar Content-type no header do request,
-				se não for enviada o valor default é 'application/x-www-form-urlencoded; charset=UTF-8';
+				se for false nÃ£o irÃ¡ adicionar Content-type no header do request,
+				se nÃ£o for enviada o valor default Ã© 'application/x-www-form-urlencoded; charset=UTF-8';
 		_arguments: Paremetros para enviar no ajax;
-		_done: (Function) função a ser executada após retorno e sucesso do ajax;
+		_done: (Function) funÃ§Ã£o a ser executada apÃ³s retorno e sucesso do ajax;
 				Paramentros:
 					value: O que retornou do ajax;
 					xhttp: O objeto XMLHttpRequest do ajax;
-		_error: (Function) função a ser executada se ocorrer algum erro durante o ajax;
+		_error: (Function) funÃ§Ã£o a ser executada se ocorrer algum erro durante o ajax;
 				Paramentros:
 					xhttp: O objeto XMLHttpRequest do ajax;
 					status: O status do ajax;
@@ -26,7 +25,8 @@ Parametros:
 */
 //Ajax com XMLHttpRequest
 var AjaxPuro = function (obAjax) {
-    var path = window.rootUrl + obAjax._path,
+    var path = ((location.hostname === "localhost" || location.pathname === "/") ? 
+    			"/" : "/" + location.pathname.split("/")[1] + "/") + obAjax._path,
         POST = obAjax._type === "POST",
         _arguments,
         obj = obAjax._arguments;
@@ -84,19 +84,19 @@ var AjaxPuro = function (obAjax) {
 Parametros:
 	obj: Objeto enviado;
 
-Retorno: (String) O tipo do objeto em minúsuculo;
+Retorno: (String) O tipo do objeto em minÃºsuculo;
 */
 //Pega o tipo do objeto mandado
 var getType = (obj) => ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
 
 /*
 Parametros:
-	obj: Objeto com as configurações do processamento:
+	obj: Objeto com as configuraÃ§Ãµes do processamento:
 		_percent: (String) Id da barra de progresso a ser atualizada durante o processamento;
 		_array: (Array) Array a ser processado;
 		_length: (Int) Tamanho do array enviado;
-		_process: (Function) Função que na qual os elementos do array serão processados;
-		_done: (Function) Função a ser executada após o término do processamento;
+		_process: (Function) FunÃ§Ã£o que na qual os elementos do array serÃ£o processados;
+		_done: (Function) FunÃ§Ã£o a ser executada apÃ³s o tÃ©rmino do processamento;
 */
 //Processa array usando setTimeout
 function processArray(obj) {
@@ -116,9 +116,9 @@ Parametros:
 	array1: (Array) Primeiro array;
 	array2: (Array) Segundo array;
 
-Retorno: (Array) Array contendo a diferença entre os dois arrays enviados;
+Retorno: (Array) Array contendo a diferenÃ§a entre os dois arrays enviados;
 */
-//Retorna a diferença entre dois arrays.
+//Retorna a diferenÃ§a entre dois arrays.
 function diferencaArrays(array1, array2) {
     var menor, maior = array1.length > array2.length ? (menor = array2, array1) : (menor = array1, array2);
     return maior.filter(key => menor.indexOf(key) === -1);
@@ -175,8 +175,8 @@ var HexToB = h => parseInt((cutHex(h)).substring(4, 6), 16);
 Parametros:
 	selection: (Array) Array de elementos a serem buscados;
 	el: (String OU Number) elemento a ser buscado;
-	att: (String) Atributo de comparação entre os elementos do array,
-			se não for enviada então a regra será comparar elemento por elemento;
+	att: (String) Atributo de comparaÃ§Ã£o entre os elementos do array,
+			se nÃ£o for enviada entÃ£o a regra serÃ¡ comparar elemento por elemento;
 
 Retorno: (Array) Array com os elementos filtrados pela busca;
 */
@@ -323,22 +323,22 @@ var removeDiacritics = (str) => str.replace(/[^\u0000-\u007E]/g, a => diacritics
 
 
 /*
-Retorno: (Array) A própria coleção mas em array;
+Retorno: (Array) A prÃ³pria coleÃ§Ã£o mas em array;
 */
-//Transforma a coleção de elementos em um array de elementos
+//Transforma a coleÃ§Ã£o de elementos em um array de elementos
 HTMLCollection.prototype.toArray = function () { return Array.prototype.slice.call(this); };
 NodeList.prototype.toArray = function () { return Array.prototype.slice.call(this); };
 
 /*
 Parametros:
-	fun: (Function) Regra para separar elementos únicos no array,
-			se não for enviada então a regra será comparar elemento por elemento;
-	map: (Boolean) Se for verdadeiro então retornará o array resultado da regra enviada,
-			se não então retornára o próprio array com elementos únicos;
+	fun: (Function) Regra para separar elementos Ãºnicos no array,
+			se nÃ£o for enviada entÃ£o a regra serÃ¡ comparar elemento por elemento;
+	map: (Boolean) Se for verdadeiro entÃ£o retornarÃ¡ o array resultado da regra enviada,
+			se nÃ£o entÃ£o retornÃ¡ra o prÃ³prio array com elementos Ãºnicos;
 
-Retorno: (Array) O próprio array com elementos únicos de acordo com a regra enviada;
+Retorno: (Array) O prÃ³prio array com elementos Ãºnicos de acordo com a regra enviada;
 */
-//Traz um array de elementos únicos
+//Traz um array de elementos Ãºnicos
 Array.prototype.unique = function (fun, map) {
     fun = fun || (c => c);
     var arrayUnique = [this[0]], arrayUniqueAtt = [fun(this[0])];
@@ -353,11 +353,11 @@ Array.prototype.unique = function (fun, map) {
 
 /*
 Parametros:
-	element: Elemento ou sequência de elementos a ser verificado;
+	element: Elemento ou sequÃªncia de elementos a ser verificado;
 
-Retorno: (Boolean) Se o elemento enviado está no próprio array;
+Retorno: (Boolean) Se o elemento enviado estÃ¡ no prÃ³prio array;
 */
-//Verifica se o elemento está no array
+//Verifica se o elemento estÃ¡ no array
 Array.prototype.contains = function (element) {
     if (getType(element) === "array") {
         for (var i = 0; i < element.length; i++) {
@@ -373,7 +373,7 @@ Array.prototype.contains = function (element) {
 Parametros:
 	className: (String) Classe a ser verificada;
 
-Retorno: (Boolean) Se o próprio elemento possui classe enviada;
+Retorno: (Boolean) Se o prÃ³prio elemento possui classe enviada;
 */
 //Verifica se elemento possui a classe enviada
 Element.prototype.hasClass = function (className) {
@@ -510,7 +510,7 @@ var showObject = {
 Parametros:
 	element: (String OU HtmlElement) String com o id do elemento OU Elemento a ser mostrado ou escondido;
 	value:   (Boolean) Valor para esconder ou mostrar o Elemento, 
-				se não for mandado então o método retorna o display do Elemento enviado;
+				se nÃ£o for mandado entÃ£o o mÃ©todo retorna o display do Elemento enviado;
 	delay:   (Number) Tempo em ms para mostrar ou esconder o Elemento;
 */
 //Mostra ou esconde elementos
@@ -565,7 +565,7 @@ var getAllCheckedRadioId = div => getElement("#" + div + ":input").reduce(functi
     return array;
 }, []);
 
-//Pega o layout de outra página
+//Pega o layout de outra pÃ¡gina
 function getLayout(path, conatiner, fDone) {
     window.onload = function () {
         var container = document.documentElement.innerHTML;
@@ -592,7 +592,7 @@ function createModal(id, modalConfig) {
 
     modalConfig = modalConfig || {}; modalConfig._configHead = modalConfig._configHead || {};
     modalConfig._XBtn = modalConfig._XBtn === false ? divNone :
-        createElement('BUTTON').config({ className: "close", Fclick: closeModal, innerHTML: "×" });
+        createElement('BUTTON').config({ className: "close", Fclick: closeModal, innerHTML: "Ã—" });
 
     modalConfig._head = modalConfig._head || divNone;
     modalConfig._body = modalConfig._body || divNone;
