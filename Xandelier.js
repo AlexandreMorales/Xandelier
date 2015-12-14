@@ -89,25 +89,47 @@ Retorno: (String) O tipo do objeto em minúsuculo;
 //Pega o tipo do objeto mandado
 var getType = (obj) => ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
 
-//PROCESSAMENTO DE ARRAY
+/*
+Parametros:
+	obj: Objeto com as configurações do processamento:
+		_percent: (String) Id da barra de progresso a ser atualizada durante o processamento;
+		_array: (Array) Array a ser processado;
+		_length: (Int) Tamanho do array enviado;
+		_process: (Function) Função que na qual os elementos do array serão processados;
+		_done: (Function) Função a ser executada após o término do processamento;
+*/
+//Processa array usando setTimeout
 function processArray(obj) {
     setTimeout(function () {
-        renderizaPorcentagem(obj._percent, 100 - ((obj._todo.length * 100) / obj._length));
-        (obj._todo.splice(0, Math.ceil(obj._length * 0.1))).forEach(x => obj._process(x));
-        if (obj._todo.length > 0)
+    	if(obj._percent)
+        	renderizaPorcentagem(obj._percent, 100 - ((obj._array.length * 100) / obj._length));
+        (obj._array.splice(0, Math.ceil(obj._length * 0.1))).forEach(x => obj._process(x));
+        if (obj._array.length > 0)
             setTimeout(processArray(obj));
-        else {
+        else if(obj._done)
             obj._done();
-        }
     });
 };
 
+/*
+Parametros:
+	array1: (Array) Primeiro array;
+	array2: (Array) Segundo array;
+
+Retorno: (Array) Array contendo a diferença entre os dois arrays enviados;
+*/
 //Retorna a diferença entre dois arrays.
 function diferencaArrays(array1, array2) {
     var menor, maior = array1.length > array2.length ? (menor = array2, array1) : (menor = array1, array2);
     return maior.filter(key => menor.indexOf(key) === -1);
 };
 
+/*
+Parametros:
+	array: (Array) Array a ser embaralhado;
+
+Retorno: (Array) Array embaralhado;
+*/
 //Embaralha array
 function shuffle(array) {
     var currentIndex = array.length, temporaryValue, randomIndex;
@@ -128,17 +150,41 @@ function shuffle(array) {
     return array;
 };
 
+//CORES
+/* Retorno: (String) Uma cor randomica em Hexadecimal; */
+//Devolve uma cor randomica em Hexadecimal
 var randomColor = () => '#' + Math.floor(Math.random() * 16777215).toString(16);
-
-//Retorna lista com itens contidos na lista recebida de acordo com a string recebida.
-var search = (selection, str, att) => 
-	selection.filter((d) => d[att].toUpperCase().replace(str.toUpperCase(), "") != d[att].toUpperCase());
-
+/* Parametros: h: (String) Cor em Hexadecimal;
+   Retorno: (String) Cor em Hexadecimal sem o caractere '#'; */
+//Corta Cor em Hexadecimal
 var cutHex = h => (h.charAt(0) == "#") ? h.substring(1, 7) : h;
+/* Parametros: h: (String) Cor em Hexadecimal;
+   Retorno: (Int) R da cor enviada; */
+//Pega o R da Cor em Hexadecimal
 var HexToR = h => parseInt((cutHex(h)).substring(0, 2), 16);
+/* Parametros: h: (String) Cor em Hexadecimal;
+   Retorno: (Int) G da cor enviada; */
+//Pega o G da Cor em Hexadecimal
 var HexToG = h => parseInt((cutHex(h)).substring(2, 4), 16);
+/* Parametros: h: (String) Cor em Hexadecimal;
+   Retorno: (Int) B da cor enviada; */
+//Pega o B da Cor em Hexadecimal
 var HexToB = h => parseInt((cutHex(h)).substring(4, 6), 16);
 
+/*
+Parametros:
+	selection: (Array) Array de elementos a serem buscados;
+	el: (String OU Number) elemento a ser buscado;
+	att: (String) Atributo de comparação entre os elementos do array,
+			se não for enviada então a regra será comparar elemento por elemento;
+
+Retorno: (Array) Array com os elementos filtrados pela busca;
+*/
+//Retorna lista com itens contidos na lista recebida de acordo com a string recebida.
+var search = (selection, el, att) => 
+	selection.filter((d) => (att ? d[att] : d).toUpperCase().indexOf(el.toUpperCase()) != -1);
+
+/* Retorno: (String) O nome do browser atual; */
 //Pega o browser atual
 function getBrowser() {
     if (window.opera || navigator.userAgent.indexOf(' OPR/') >= 0)
@@ -467,7 +513,7 @@ Parametros:
 				se não for mandado então o método retorna o display do Elemento enviado;
 	delay:   (Number) Tempo em ms para mostrar ou esconder o Elemento;
 */
-//Mostra ou esconde divs
+//Mostra ou esconde elementos
 function show(element, value, delay) {
     showObject.valueShowBool = value;
     element = (getType(element) === "string") ? 
@@ -503,7 +549,7 @@ Parametros:
 //Cria um elemento HTML novo
 var createElement = (el) => document.createElement(el);
 
-//GERENCIA PORCENTAGEM DO BOOTSTRAP
+//Renderiza porcentagem do bootstrap
 var renderizaPorcentagem = (idProcess, value) => 
 	document.getElementById(idProcess).config({ 
 		Swidth: value + "%", innerHTML: Math.round(value) + "%", "aria-valuenow": value 
@@ -587,7 +633,7 @@ function clickOutsideModal(e) {
         toggleModal(e.target.id, false);
 };
 
-// TITLE PERSONALIZADO
+//TITLE PERSONALIZADO
 var PersonalizeTitle = {
     titleName: "personalizeTitle",
     titleEl: null
