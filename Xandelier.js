@@ -335,9 +335,9 @@ var diacriticsMap = [
     { 'base': 'x', 'letters': '\u0078\u24E7\uFF58\u1E8B\u1E8D' },
     { 'base': 'y', 'letters': '\u0079\u24E8\uFF59\u1EF3\u00FD\u0177\u1EF9\u0233\u1E8F\u00FF\u1EF7\u1E99\u1EF5\u01B4\u024F\u1EFF' },
     { 'base': 'z', 'letters': '\u007A\u24E9\uFF5A\u017A\u1E91\u017C\u017E\u1E93\u1E95\u01B6\u0225\u0240\u2C6C\uA763' }
-].reduce(function(obj, item){
-	item.letters.split("").forEach((l) => obj[l] = item.base);
-	return obj;
+].reduce(function (obj, item) {
+    item.letters.split("").forEach((l) => obj[l] = item.base);
+    return obj;
 }, {});
 
 // "what?" version ... http://jsperf.com/diacritics/12
@@ -511,8 +511,8 @@ function show(element, value, delay) {
     else {
         showObject.sameElement = {};
         var op = showObject.valueShowBool ? 0.1 : 1;  // initial opacity
+        element.style.display = value ? 'block' : 'none';
         var timer = setInterval(function () {
-            element.style.display = value ? 'block' : 'none';
             if (op > 1 || op < 0.1) {
                 clearInterval(timer);
                 element.style.display = value ? 'block' : 'none';
@@ -573,10 +573,12 @@ function getLayout(path, conatiner, fDone) {
 
 //MODALS
 var XModal = {
-	divNone: document.createElement("DIV").config({ Sdisplay: "none" }),
+    confirmName: "confirmXModal",
+    divNone: document.createElement("DIV").config({ Sdisplay: "none" }),
+    divBackdrop: document.createElement("DIV").addClass("modal-backdrop fade in")
 };
-XModal.create = function(id, modalConfig) {
-    var closeModal = () => XModal.toggleModal(id, false);
+XModal.create = function (id, modalConfig) {
+    var closeModal = () => XModal.toggle(id, false);
 
     modalConfig = modalConfig || {};;
     modalConfig._XBtn = modalConfig._XBtn === false ? XModal.divNone :
@@ -601,47 +603,44 @@ XModal.create = function(id, modalConfig) {
                     .append(document.createElement('DIV').config(modalConfig._configFoot || {}).addClass("modal-footer")
                     	.append(modalConfig._foot)))));
 };
-XModal.confirm = function(text, func) {
-    if (!getElement("#confirmModal"))
-    	XModal.create("confirmModal", {
-        	_XBtn: false,
-        	_configHead: { Sdisplay: "none" },
-       		_body: document.createElement("DIV").config({ innerHTML: text }),
-        	_foot: document.createElement('DIV')
+XModal.confirm = function (text, func) {
+    if (!getElement("#" + XModal.confirmName))
+        XModal.create(XModal.confirmName, {
+            _XBtn: false,
+            _configHead: { Sdisplay: "none" },
+            _body: document.createElement("label").config({ innerHTML: text }),
+            _foot: document.createElement('DIV')
               .append(document.createElement('BUTTON').config({
-                  className: "btn btn-default", Fclick: function () {
-                      func(true); XModal.toggleModal("confirmModal", false);
-                  }, innerHTML: "OK"
+                  Fclick: function () {
+                      XModal.toggle(XModal.confirmName, false);
+                      func(true);
+                  }, innerHTML: "OK", className: "btn btn-default"
               }))
               .append(document.createElement('BUTTON').config({
-                  className: "btn btn-default", Fclick: function () {
-                      func(false); XModal.toggleModal("confirmModal", false);
-                  }, innerHTML: "Cancela"
+                  Fclick: function () {
+                      XModal.toggle(XModal.confirmName, false);
+                      func(false);
+                  }, innerHTML: "Cancela", className: "btn btn-default"
               }))
-    	});
+        });
+    else getElement("#" + XModal.confirmName + ":label")[0].innerHTML = text;
 
-    XModal.toggleModal("confirmModal", true, { _clickOut: false });
+    XModal.toggle(XModal.confirmName, true, { _clickOut: false });
 };
-XModal.toggleModal = function(id, content, modalConfig) {
+XModal.toggle = function (id, content, modalConfig) {
     modalConfig = modalConfig || {};
-    var element = document.getElementById(id),
-        divBackdrop = document.getElementsByClassName("modal-backdrop fade in")[0];
+    var element = document.getElementById(id);
     if (!element) return;
     show(element[(content ? "add" : "remove") + "Class"]("in"), content, modalConfig._delay || 3);
     if (modalConfig._clickOut !== false)
         document.body[(content ? "add" : "remove") + "EventListener"]('click', XModal.clickOutsideModal);
 
-    if (content) {
-        if (!divBackdrop)
-            document.getElementsByTagName("body")[0].appendChild(document.createElement("DIV").addClass("modal-backdrop fade in"));
-    } else {
-        if (element.onHideModal) element.onHideModal();
-        if (divBackdrop) divBackdrop.remove();
-    }
+    document.getElementsByTagName("body")[0][(content ? "append" : "remove") + "Child"](XModal.divBackdrop);
+    if (!content && element.onHideModal) element.onHideModal();
 };
-XModal.clickOutsideModal = function(e) {
+XModal.clickOutsideModal = function (e) {
     if (e.target.className.indexOf("modal fade in") !== -1)
-        XModal.toggleModal(e.target.id, false);
+        XModal.toggle(e.target.id, false);
 };
 
 
