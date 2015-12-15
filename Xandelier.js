@@ -180,6 +180,44 @@ Retorno: (Array) Array com os elementos filtrados pela busca;
 var search = (selection, el, att) =>
     selection.filter((d) => (att ? d[att] : d).toUpperCase().indexOf(el.toUpperCase()) != -1);
 
+/*
+Parametros:
+	fun: (Function) Regra para separar elementos únicos no array,
+			se não for enviada então a regra será comparar elemento por elemento;
+	map: (Boolean) Se for verdadeiro então retornará o array resultado da regra enviada,
+			se não então retornára o próprio array com elementos únicos;
+Retorno: (Array) O próprio array com elementos únicos de acordo com a regra enviada;
+*/
+//Traz um array de elementos únicos
+Array.prototype.unique = function (fun, map) {
+    fun = fun || (c => c);
+    var arrayUnique = [this[0]], arrayUniqueAtt = [fun(this[0])];
+    for (var i = 1; i < this.length; ++i) {
+        if (arrayUniqueAtt.indexOf(fun(this[i])) === -1) {
+            arrayUniqueAtt.push(fun(this[i]));
+            arrayUnique.push(this[i]);
+        }
+    }
+    return map ? arrayUniqueAtt : arrayUnique;
+};
+
+/*
+Parametros:
+	element: Elemento ou sequência de elementos a ser verificado;
+Retorno: (Boolean) Se o elemento enviado está no próprio array;
+*/
+//Verifica se o elemento está no array
+Array.prototype.contains = function (element) {
+    if (getType(element) === "array") {
+        for (var i = 0; i < element.length; i++) {
+            if (this.indexOf(element[i]) === -1)
+                return false;
+        }
+        return true;
+    } else
+        return this.indexOf(element) !== -1;
+};
+
 /* Retorno: (String) O nome do browser atual; */
 //Pega o browser atual
 function getBrowser() {
@@ -210,7 +248,7 @@ function getBrowser() {
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-var defaultDiacriticsRemovalap = [
+var diacriticsMap = [
     { 'base': 'A', 'letters': '\u0041\u24B6\uFF21\u00C0\u00C1\u00C2\u1EA6\u1EA4\u1EAA\u1EA8\u00C3\u0100\u0102\u1EB0\u1EAE\u1EB4\u1EB2\u0226\u01E0\u00C4\u01DE\u1EA2\u00C5\u01FA\u01CD\u0200\u0202\u1EA0\u1EAC\u1EB6\u1E00\u0104\u023A\u2C6F' },
     { 'base': 'AA', 'letters': '\uA732' },
     { 'base': 'AE', 'letters': '\u00C6\u01FC\u01E2' },
@@ -297,15 +335,10 @@ var defaultDiacriticsRemovalap = [
     { 'base': 'x', 'letters': '\u0078\u24E7\uFF58\u1E8B\u1E8D' },
     { 'base': 'y', 'letters': '\u0079\u24E8\uFF59\u1EF3\u00FD\u0177\u1EF9\u0233\u1E8F\u00FF\u1EF7\u1E99\u1EF5\u01B4\u024F\u1EFF' },
     { 'base': 'z', 'letters': '\u007A\u24E9\uFF5A\u017A\u1E91\u017C\u017E\u1E93\u1E95\u01B6\u0225\u0240\u2C6C\uA763' }
-];
-
-var diacriticsMap = {};
-for (var i = 0; i < defaultDiacriticsRemovalap.length; i++) {
-    var letters = defaultDiacriticsRemovalap[i].letters;
-    for (var j = 0; j < letters.length ; j++) {
-        diacriticsMap[letters[j]] = defaultDiacriticsRemovalap[i].base;
-    }
-}
+].reduce(function(obj, item){
+	item.letters.split("").forEach((l) => obj[l] = item.base);
+	return obj;
+}, {});
 
 // "what?" version ... http://jsperf.com/diacritics/12
 var removeDiacritics = (str) => str.replace(/[^\u0000-\u007E]/g, a => diacriticsMap[a] || a);
@@ -321,44 +354,6 @@ Retorno: (Array) A própria coleção mas em array;
 //Transforma a coleção de elementos em um array de elementos
 HTMLCollection.prototype.toArray = function () { return Array.prototype.slice.call(this); };
 NodeList.prototype.toArray = function () { return Array.prototype.slice.call(this); };
-
-/*
-Parametros:
-	fun: (Function) Regra para separar elementos únicos no array,
-			se não for enviada então a regra será comparar elemento por elemento;
-	map: (Boolean) Se for verdadeiro então retornará o array resultado da regra enviada,
-			se não então retornára o próprio array com elementos únicos;
-Retorno: (Array) O próprio array com elementos únicos de acordo com a regra enviada;
-*/
-//Traz um array de elementos únicos
-Array.prototype.unique = function (fun, map) {
-    fun = fun || (c => c);
-    var arrayUnique = [this[0]], arrayUniqueAtt = [fun(this[0])];
-    for (var i = 1; i < this.length; ++i) {
-        if (arrayUniqueAtt.indexOf(fun(this[i])) === -1) {
-            arrayUniqueAtt.push(fun(this[i]));
-            arrayUnique.push(this[i]);
-        }
-    }
-    return map ? arrayUniqueAtt : arrayUnique;
-};
-
-/*
-Parametros:
-	element: Elemento ou sequência de elementos a ser verificado;
-Retorno: (Boolean) Se o elemento enviado está no próprio array;
-*/
-//Verifica se o elemento está no array
-Array.prototype.contains = function (element) {
-    if (getType(element) === "array") {
-        for (var i = 0; i < element.length; i++) {
-            if (this.indexOf(element[i]) === -1)
-                return false;
-        }
-        return true;
-    } else
-        return this.indexOf(element) !== -1;
-};
 
 /*
 Parametros:
@@ -577,19 +572,21 @@ function getLayout(path, conatiner, fDone) {
 };
 
 //MODALS
-function createModal(id, modalConfig) {
-    var divNone = document.createElement("DIV").config({ Sdisplay: "none" }),
-    	closeModal = () => toggleModal(id, false);
+var XModal = {
+	divNone: document.createElement("DIV").config({ Sdisplay: "none" }),
+};
+XModal.create = function(id, modalConfig) {
+    var closeModal = () => XModal.toggleModal(id, false);
 
     modalConfig = modalConfig || {};;
-    modalConfig._XBtn = modalConfig._XBtn === false ? divNone :
-        document.createElement('BUTTON').config({ className: "close", Fclick: closeModal, innerHTML: "×" });
+    modalConfig._XBtn = modalConfig._XBtn === false ? XModal.divNone :
+        document.createElement('BUTTON').config({ className: "close", Fclick: closeModal, innerHTML: "X" });
 
-    modalConfig._head = modalConfig._head || divNone;
-    modalConfig._body = modalConfig._body || divNone;
+    modalConfig._head = modalConfig._head || XModal.divNone;
+    modalConfig._body = modalConfig._body || XModal.divNone;
     modalConfig._foot = modalConfig._foot === undefined ?
         document.createElement('BUTTON').config({ className: "btn btn-default", Fclick: closeModal, innerHTML: "Fechar" }) :
-        modalConfig._foot || divNone;
+        modalConfig._foot || XModal.divNone;
 
     document.getElementsByTagName("body")[0]
         .append(document.createElement('DIV').config({ id: id, className: "modal fade" })
@@ -604,38 +601,35 @@ function createModal(id, modalConfig) {
                     .append(document.createElement('DIV').config(modalConfig._configFoot || {}).addClass("modal-footer")
                     	.append(modalConfig._foot)))));
 };
-function createConfirm(text, func) {
-    if (getElement("#confirmModal")) getElement("#confirmModal").remove();
-    createModal("confirmModal", {
-        _XBtn: false,
-        _configHead: { Sdisplay: "none" },
-        _body: document.createElement("DIV").config({ innerHTML: text }),
-        _foot: document.createElement('DIV')
+XModal.confirm = function(text, func) {
+    if (!getElement("#confirmModal"))
+    	XModal.create("confirmModal", {
+        	_XBtn: false,
+        	_configHead: { Sdisplay: "none" },
+       		_body: document.createElement("DIV").config({ innerHTML: text }),
+        	_foot: document.createElement('DIV')
               .append(document.createElement('BUTTON').config({
                   className: "btn btn-default", Fclick: function () {
-                      func(true); toggleModal("confirmModal", false);
+                      func(true); XModal.toggleModal("confirmModal", false);
                   }, innerHTML: "OK"
               }))
               .append(document.createElement('BUTTON').config({
                   className: "btn btn-default", Fclick: function () {
-                      func(false); toggleModal("confirmModal", false);
+                      func(false); XModal.toggleModal("confirmModal", false);
                   }, innerHTML: "Cancela"
               }))
-    });
+    	});
 
-    toggleModal("confirmModal", true, { _clickOut: false });
-
-    return getElement("#confirmModal");
+    XModal.toggleModal("confirmModal", true, { _clickOut: false });
 };
-function toggleModal(id, content, modalConfig) {
+XModal.toggleModal = function(id, content, modalConfig) {
     modalConfig = modalConfig || {};
     var element = document.getElementById(id),
         divBackdrop = document.getElementsByClassName("modal-backdrop fade in")[0];
     if (!element) return;
     show(element[(content ? "add" : "remove") + "Class"]("in"), content, modalConfig._delay || 3);
     if (modalConfig._clickOut !== false)
-        document.body[(content ? "add" : "remove") + "EventListener"]('click', clickOutsideModal);
-
+        document.body[(content ? "add" : "remove") + "EventListener"]('click', XModal.clickOutsideModal);
 
     if (content) {
         if (!divBackdrop)
@@ -645,18 +639,19 @@ function toggleModal(id, content, modalConfig) {
         if (divBackdrop) divBackdrop.remove();
     }
 };
-function clickOutsideModal(e) {
+XModal.clickOutsideModal = function(e) {
     if (e.target.className.indexOf("modal fade in") !== -1)
-        toggleModal(e.target.id, false);
+        XModal.toggleModal(e.target.id, false);
 };
 
+
 //TITLE PERSONALIZADO
-var PersonalizeTitle = {
+var XTitle = {
     titleName: "",
     titleEl: null,
     titleDelay: 0
 };
-PersonalizeTitle.iniciaTitle = function (titleConfig) {
+XTitle.iniciaTitle = function (titleConfig) {
     titleConfig = titleConfig || {};
     var style = {
         padding: "3px",
@@ -672,43 +667,43 @@ PersonalizeTitle.iniciaTitle = function (titleConfig) {
     };
     if (titleConfig._style) Object.keys(titleConfig._style).forEach(att => style[att] = titleConfig._style[att]);
 
-    PersonalizeTitle.titleDelay = titleConfig._delay || 20;
-    PersonalizeTitle.titleName = titleConfig._name || "personalizeTitle";
-    PersonalizeTitle.titleEl = document.getElementById(PersonalizeTitle.titleName) ||
+    XTitle.titleDelay = titleConfig._delay || 20;
+    XTitle.titleName = titleConfig._name || "personalizeTitle";
+    XTitle.titleEl = document.getElementById(XTitle.titleName) ||
         document.getElementsByTagName("body")[0].appendChild(document.createElement("div").config({
-            id: PersonalizeTitle.titleName, style: style
+            id: XTitle.titleName, style: style
         }));
 
-    var getPlace = evt => PersonalizeTitle.titleEl.config({
+    var getPlace = evt => XTitle.titleEl.config({
         style: { left: (evt.pageX + 12) + "px", top: (evt.pageY + 20) + "px" }
     });
     document.onmousemove = getPlace;
     document.addEventListener(getBrowser() !== "firefox" ? "mousewheel" : "DOMMouseScroll", getPlace, false);
-    PersonalizeTitle.refreshTitle();
+    XTitle.refreshTitle();
 };
-PersonalizeTitle.refreshTitle = function () {
-    show(PersonalizeTitle.titleEl, false);
+XTitle.refreshTitle = function () {
+    show(XTitle.titleEl, false);
     getElement("+title").forEach(function (el) {
-        el.setAttribute(PersonalizeTitle.titleName, el.title);
+        el.setAttribute(XTitle.titleName, el.title);
         el.removeAttribute("title");
-        el.onmouseover = function () { PersonalizeTitle.showTitle(el.getAttribute(PersonalizeTitle.titleName)) };
-        el.onmouseout = function () { PersonalizeTitle.showTitle() };
+        el.onmouseover = function () { XTitle.showTitle(el.getAttribute(XTitle.titleName)) };
+        el.onmouseout = function () { XTitle.showTitle() };
     });
 
     var parent;
     document.getElementsByTagName("title").toArray().forEach(function (el) {
         parent = el.parentElement;
         if (parent.tagName !== "HEAD") {
-            parent.setAttribute(PersonalizeTitle.titleName, el.innerHTML);
+            parent.setAttribute(XTitle.titleName, el.innerHTML);
             el.remove();
             parent.onmouseover = function () {
-                PersonalizeTitle.showTitle(parent.getAttribute(PersonalizeTitle.titleName))
+                XTitle.showTitle(parent.getAttribute(XTitle.titleName))
             };
-            parent.onmouseout = function () { PersonalizeTitle.showTitle() };
+            parent.onmouseout = function () { XTitle.showTitle() };
         }
     });
 };
-PersonalizeTitle.showTitle = function (text) {
-    text ? show(PersonalizeTitle.titleEl, true, PersonalizeTitle.titleDelay) : show(PersonalizeTitle.titleEl, false);
-    PersonalizeTitle.titleEl.config({ innerHTML: text || "" });
+XTitle.showTitle = function (text) {
+    text ? show(XTitle.titleEl, true, XTitle.titleDelay) : show(XTitle.titleEl, false);
+    XTitle.titleEl.config({ innerHTML: text || "" });
 };
