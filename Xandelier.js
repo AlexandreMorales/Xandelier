@@ -362,7 +362,7 @@ Retorno: (Boolean) Se o próprio elemento possui classe enviada;
 */
 //Verifica se elemento possui a classe enviada
 Element.prototype.hasClass = function (className) {
-    return this.className.split(" ").indexOf(className) > -1;
+    return this.className.indexOf(className) > -1;
 };
 
 Element.prototype.addClass = function (className) {
@@ -419,13 +419,14 @@ Element.prototype.append = function (element) {
 };
 
 //Pega o attributo do DOM
-Element.prototype.getDOMAttribute = function (element) { return this[element]; };
+Element.prototype.getDOMAttribute = function (element) {
+    return this[element];
+};
 
 //Esvazia o Elemento
 Element.prototype.empty = function () {
-    while (this.firstChild) {
+    while (this.firstChild)
         this.removeChild(this.firstChild);
-    }
     return this;
 };
 
@@ -545,11 +546,12 @@ var getCheckedRadioId = name =>
     document.getElementsByName(name).toArray().filter(x => x.checked)[0].id;
 
 //Pega todos os ids dos radio buttons selecionados de uma div
-var getAllCheckedRadioId = div => getElement("#" + div + ":input").reduce(function (array, element) {
-    if (element.checked)
-        array.push(element.id);
-    return array;
-}, []);
+var getAllCheckedRadioId = div =>
+    getElement("#" + div + ":input").reduce(function (array, element) {
+        if (element.checked)
+            array.push(element.id);
+        return array;
+    }, []);
 
 //Pega o layout de outra página
 function getLayout(path, conatiner, fDone) {
@@ -580,14 +582,14 @@ var XModal = {
 XModal.create = function (id, modalConfig) {
     var closeModal = () => XModal.toggle(id, false);
 
-    modalConfig = modalConfig || {};;
+    modalConfig = modalConfig || {};
     modalConfig._XBtn = modalConfig._XBtn === false ? XModal.divNone :
-        document.createElement('BUTTON').config({ className: "close", Fclick: closeModal, innerHTML: "X" });
+        document.createElement('BUTTON').config({ className: "close", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "X" });
 
     modalConfig._head = modalConfig._head || XModal.divNone;
     modalConfig._body = modalConfig._body || XModal.divNone;
     modalConfig._foot = modalConfig._foot === undefined ?
-        document.createElement('BUTTON').config({ className: "btn btn-default", Fclick: closeModal, innerHTML: "Fechar" }) :
+        document.createElement('BUTTON').config({ className: "btn btn-default", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "Fechar" }) :
         modalConfig._foot || XModal.divNone;
 
     document.getElementsByTagName("body")[0]
@@ -628,18 +630,19 @@ XModal.confirm = function (text, func) {
     XModal.toggle(XModal.confirmName, true, { _clickOut: false });
 };
 XModal.toggle = function (id, content, modalConfig) {
-    modalConfig = modalConfig || {};
-    var element = document.getElementById(id);
-    if (!element) return;
-    show(element[(content ? "add" : "remove") + "Class"]("in"), content, modalConfig._delay || 3);
-    if (modalConfig._clickOut !== false)
-        document.body[(content ? "add" : "remove") + "EventListener"]('click', XModal.clickOutsideModal);
-
-    document.getElementsByTagName("body")[0][(content ? "append" : "remove") + "Child"](XModal.divBackdrop);
-    if (!content && element.onHideModal) element.onHideModal();
+    var element = document.getElementById(id), body = document.getElementsByTagName("body")[0];
+    if (!body.hasClass("modal-open")) { //if para verificar data-toggle
+        modalConfig = modalConfig || {};
+        if (!element) return;
+        show(element[(content ? "add" : "remove") + "Class"]("in"), content, modalConfig._delay || 3);
+        if (modalConfig._clickOut !== false)
+            document.body[(content ? "add" : "remove") + "EventListener"]('click', XModal.clickOutsideModal);
+        body[(content ? "append" : "remove") + "Child"](XModal.divBackdrop);
+        if (!content && element.onHideModal) element.onHideModal();
+    } else body.removeClass("modal-open");
 };
 XModal.clickOutsideModal = function (e) {
-    if (e.target.className.indexOf("modal fade in") !== -1)
+    if (e.target.hasClass("modal fade in"))
         XModal.toggle(e.target.id, false);
 };
 
