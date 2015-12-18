@@ -5,7 +5,7 @@
 Parametros:
 	obAjax: Objeto com as configurações do ajax:
 		_path: (String) URL do ajax
-                (tem que estar pré-setado a váriavel window.rootUrl que diz aonde a aplicação se encontra);
+                (pode estar pré-setado a váriavel window.rootUrl que diz aonde a aplicação se encontra);
 		_type: (String) Tipo de requisição em caixa alta(POST, GET, PUT, DELETE);
 		_dataType: (String OU Boolean) Tipo de data a ser enviado pelo ajax, 
 				se for false não irá adicionar Data-type no header do request,
@@ -26,7 +26,7 @@ Parametros:
 */
 //Ajax com XMLHttpRequest
 var AjaxPuro = function (obAjax) {
-    var path = window.rootUrl + obAjax._path,
+    var path = (window.rootUrl || "") + obAjax._path,
         POST = obAjax._type === "POST",
         _arguments,
         obj = obAjax._arguments;
@@ -576,37 +576,55 @@ function getLayout(path, conatiner, fDone) {
 //MODALS
 var XModal = {
     confirmName: "confirmXModal",
+    promptName: "promptXModal",
     divNone: document.createElement("DIV").config({ Sdisplay: "none" }),
     divBackdrop: document.createElement("DIV").addClass("modal-backdrop fade in")
 };
 XModal.create = function (id, modalConfig) {
-    var closeModal = () => XModal.toggle(id, false);
+    var closeModal = function () {
+        XModal.toggle(id, false);
+        if (modalConfig.onHide) modalConfig.onHide();
+    };
 
     modalConfig = modalConfig || {};
     modalConfig._XBtn = modalConfig._XBtn === false ? XModal.divNone :
-        document.createElement('BUTTON').config({ className: "close", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "X" });
+        document.createElement('BUTTON').config({ className: "close", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "x" });
 
     modalConfig._head = modalConfig._head || XModal.divNone;
     modalConfig._body = modalConfig._body || XModal.divNone;
+
     modalConfig._foot = modalConfig._foot === undefined ?
         document.createElement('BUTTON').config({ className: "btn btn-default", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "Fechar" }) :
         modalConfig._foot || XModal.divNone;
+
+    modalConfig._configHead = XModal._configConfig(modalConfig, "_configHead", "modal-header");
+    modalConfig._configTitle = XModal._configConfig(modalConfig, "_configTitle", "modal-title");
+    modalConfig._configBody = XModal._configConfig(modalConfig, "_configBody", "modal-body");
+    modalConfig._configFoot = XModal._configConfig(modalConfig, "_configFoot", "modal-footer");
 
     document.getElementsByTagName("body")[0]
         .append(document.createElement('DIV').config({ id: id, className: "modal fade" })
             .append(document.createElement('DIV').addClass("modal-dialog")
                 .append(document.createElement('DIV').addClass("modal-content " + (modalConfig._contentClass || ""))
-                    .append(document.createElement('DIV').config(modalConfig._configHead || {}).addClass("modal-header")
+                    .append(document.createElement('DIV').config(modalConfig._configHead)
                         .append(modalConfig._XBtn)
-                        .append(document.createElement('h4').config(modalConfig._configTitle || {}).addClass("modal-title"))
+                        .append(document.createElement('h4').config(modalConfig._configTitle))
                         .append(modalConfig._head))
-                    .append(document.createElement('DIV').config(modalConfig._configBody || {}).addClass("modal-body")
+                    .append(document.createElement('DIV').config(modalConfig._configBody)
                     	.append(modalConfig._body))
-                    .append(document.createElement('DIV').config(modalConfig._configFoot || {}).addClass("modal-footer")
+                    .append(document.createElement('DIV').config(modalConfig._configFoot)
                     	.append(modalConfig._foot)))));
 };
+XModal._configConfig = function (modalConfig, att, value) {
+    if (modalConfig[att] === undefined)
+        return { className: value }
+    if (modalConfig[att] === false)
+        return {};
+    modalConfig[att].className = (modalConfig[att].className) ? value + " " + modalConfig[att].className : value;
+    return modalConfig[att];
+};
 XModal.confirm = function (text, func) {
-    if (!getElement("#" + XModal.confirmName))
+    if (!document.getElementById(XModal.confirmName))
         XModal.create(XModal.confirmName, {
             _XBtn: false,
             _configHead: { Sdisplay: "none" },
@@ -629,6 +647,32 @@ XModal.confirm = function (text, func) {
 
     XModal.toggle(XModal.confirmName, true, { _clickOut: false });
 };
+XModal.prompt = function (text, func) {
+    if (!document.getElementById(XModal.promptName))
+        XModal.create(XModal.promptName, {
+            _configHead: { style: { border: "none" } },
+            _configBody: { style: { paddingTop: "none" } },
+            _body: document.createElement('DIV')
+              .append(document.createElement("label").config({ innerHTML: text })).append(document.createElement("BR"))
+              .append(document.createElement('DIV').config({ className: "input-group" })
+                .append(document.createElement("INPUT").config({ type: "text", className: "form-control", SmaxWidth: "none" }))
+                .append(document.createElement("SPAN").config({ className: "input-group-btn" })
+                  .append(document.createElement("BUTTON").config({
+                      Fclick: function () {
+                          XModal.toggle(XModal.promptName, false);
+                          func(getElement("#" + XModal.promptName + ":input")[0].value);
+                      }, className: "btn btn-defaul", type: "button", innerHTML: "OK", Sborder: "none"
+                  }))
+                )),
+            _configFoot: { Sdisplay: "none" },
+            onHide: () => func(false)
+        });
+    else {
+        getElement("#" + XModal.promptName + ":label")[0].innerHTML = text;
+        getElement("#" + XModal.promptName + ":input")[0].value = "";
+    }
+    XModal.toggle(XModal.promptName, true, { _clickOut: false });
+};
 XModal.toggle = function (id, content, modalConfig) {
     var element = document.getElementById(id), body = document.getElementsByTagName("body")[0];
     if (!body.hasClass("modal-open")) { //if para verificar data-toggle
@@ -638,8 +682,8 @@ XModal.toggle = function (id, content, modalConfig) {
         if (modalConfig._clickOut !== false)
             document.body[(content ? "add" : "remove") + "EventListener"]('click', XModal.clickOutsideModal);
         body[(content ? "append" : "remove") + "Child"](XModal.divBackdrop);
-        if (!content && element.onHideModal) element.onHideModal();
     } else body.removeClass("modal-open");
+    if (!content && element.onHideModal) element.onHideModal();
 };
 XModal.clickOutsideModal = function (e) {
     if (e.target.hasClass("modal fade in"))
