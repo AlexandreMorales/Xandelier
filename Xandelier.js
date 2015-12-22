@@ -546,11 +546,7 @@ var getCheckedRadioId = name =>
 
 //Pega todos os ids dos radio buttons selecionados de uma div
 var getAllCheckedRadioId = div =>
-    getElement("#" + div + ":input").reduce(function (array, element) {
-        if (element.checked)
-            array.push(element.id);
-        return array;
-    }, []);
+    getElement("#" + div + ":input&+type=radio").filter(el => el.checked);
 
 //Pega o layout de outra página
 function getLayout(path, conatiner, fDone) {
@@ -595,21 +591,22 @@ var XModal = {
     }
 };
 XModal.create = function (id, modalConfig) {
-    var closeModal = function () {
-        XModal.toggle(id, false);
-        if (modalConfig.onHide) modalConfig.onHide();
-    };
+    var closeModal = () => XModal.toggle(id, false);
 
     modalConfig = modalConfig || {};
+    modalConfig._XBtn = modalConfig._XBtn === undefined ? "x" : modalConfig._XBtn;
     modalConfig._XBtn = modalConfig._XBtn === false ? XModal.divNone :
-        document.createElement('BUTTON').config({ className: "close", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "x" });
+        document.createElement('BUTTON').config({
+            className: "close", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: modalConfig._XBtn
+        });
 
     modalConfig._head = modalConfig._head || XModal.divNone;
     modalConfig._body = modalConfig._body || XModal.divNone;
 
     modalConfig._foot = modalConfig._foot === undefined ?
-        document.createElement('BUTTON').config({ className: "btn btn-default", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "Fechar" }) :
-        modalConfig._foot || XModal.divNone;
+        document.createElement('BUTTON').config({
+            className: "btn btn-default", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "Fechar"
+        }) : modalConfig._foot || XModal.divNone;
 
     XModal._modalConfigAx = modalConfig;
 
@@ -631,66 +628,70 @@ XModal.alert = function (text) {
         XModal.create(XModal.alertName, {
             _configContent: { style: { width: "50%", margin: "0px auto 0px auto" } },
             _configHead: { style: { border: "none" } },
-            _configFoot: { style: { border: "none" } },
+            _configFoot: { style: { border: "none", marginTop: "0px" } },
             _body: document.createElement("label").config({ innerHTML: text }),
-            _foot: document.createElement('DIV')
-              .append(document.createElement('BUTTON').config({
-                  Fclick: () => XModal.toggle(XModal.alertName, false),
-                  innerHTML: "OK", className: "btn btn-default"
-              }))
+            _foot: document.createElement('BUTTON').config({
+                Fclick: () => XModal.toggle(XModal.alertName, false),
+                innerHTML: "OK", className: "btn btn-default"
+            })
         });
     else getElement("#" + XModal.alertName + ":label")[0].innerHTML = text;
 
     XModal.toggle(XModal.alertName, true);
 };
 XModal.confirm = function (text, func) {
-    if (!document.getElementById(XModal.confirmName))
+    if (document.getElementById(XModal.confirmName)) {
+        getElement("#" + XModal.confirmName + ":button")[0].removeEventListener("click", XModal.okClick);
+        getElement("#" + XModal.confirmName + ":button")[1].removeEventListener("click", XModal.cancelClick);
+    } else
         XModal.create(XModal.confirmName, {
             _XBtn: false,
             _configHead: { Sdisplay: "none" },
-            _body: document.createElement("label").config({ innerHTML: text }),
+            _body: document.createElement("label"),
             _foot: document.createElement('DIV')
               .append(document.createElement('BUTTON').config({
-                  Fclick: function () {
-                      XModal.toggle(XModal.confirmName, false);
-                      func(true);
-                  }, innerHTML: "OK", className: "btn btn-default"
+                  innerHTML: "OK", className: "btn btn-default"
               }))
               .append(document.createElement('BUTTON').config({
-                  Fclick: function () {
-                      XModal.toggle(XModal.confirmName, false);
-                      func(false);
-                  }, innerHTML: "Cancela", className: "btn btn-default"
+                  innerHTML: "Cancela", className: "btn btn-default"
               }))
         });
-    else getElement("#" + XModal.confirmName + ":label")[0].innerHTML = text;
+
+    getElement("#" + XModal.confirmName + ":label")[0].innerHTML = text;
+    XModal.okClick = function () { XModal.toggle(XModal.confirmName, false); func(true); };
+    getElement("#" + XModal.confirmName + ":button")[0].addEventListener("click", XModal.okClick);
+    XModal.cancelClick = function () { XModal.toggle(XModal.confirmName, false); func(false); };
+    getElement("#" + XModal.confirmName + ":button")[1].addEventListener("click", XModal.cancelClick);
 
     XModal.toggle(XModal.confirmName, true, { _clickOut: false });
 };
 XModal.prompt = function (text, func) {
-    if (!document.getElementById(XModal.promptName))
+    if (document.getElementById(XModal.promptName))
+        getElement("#" + XModal.promptName + ":button")[0].removeEventListener("click", XModal.promptFunc);
+    else
         XModal.create(XModal.promptName, {
-            _configHead: { style: { border: "none" } },
+            _foot: false, _XBtn: false, _head: false,
+            _configHead: { style: { display: "none" } },
             _configBody: { style: { paddingTop: "none" } },
             _body: document.createElement('DIV')
-              .append(document.createElement("label").config({ innerHTML: text })).append(document.createElement("BR"))
+              .append(document.createElement("label")).append(document.createElement("BR"))
               .append(document.createElement('DIV').config({ className: "input-group" })
                 .append(document.createElement("INPUT").config({ type: "text", className: "form-control", SmaxWidth: "none" }))
                 .append(document.createElement("SPAN").config({ className: "input-group-btn" })
                   .append(document.createElement("BUTTON").config({
-                      Fclick: function () {
-                          XModal.toggle(XModal.promptName, false);
-                          func(getElement("#" + XModal.promptName + ":input")[0].value);
-                      }, className: "btn btn-defaul", type: "button", innerHTML: "OK", Sborder: "none"
+                      className: "btn btn-defaul", type: "button", innerHTML: "OK", Sborder: "none"
                   }))
                 )),
-            _configFoot: { Sdisplay: "none" },
-            onHide: () => func(false)
+            _configFoot: { style: { display: "none" } }
         });
-    else {
-        getElement("#" + XModal.promptName + ":label")[0].innerHTML = text;
-        getElement("#" + XModal.promptName + ":input")[0].value = "";
-    }
+
+    getElement("#" + XModal.promptName + ":label")[0].innerHTML = text;
+    getElement("#" + XModal.promptName + ":input")[0].value = "";
+    XModal.promptFunc = function () {
+        XModal.toggle(XModal.promptName, false);
+        func(getElement("#" + XModal.promptName + ":input")[0].value);
+    };
+    getElement("#" + XModal.promptName + ":button")[0].addEventListener("click", XModal.promptFunc);
     XModal.toggle(XModal.promptName, true, { _clickOut: false });
 };
 XModal.toggle = function (id, content, modalConfig) {
