@@ -537,7 +537,7 @@ var createElement = (el) => document.createElement(el);
 //Renderiza porcentagem do bootstrap
 var renderizaPorcentagem = (idProcess, value) =>
     document.getElementById(idProcess).config({
-        Swidth: value + "%", innerHTML: Math.round(value) + "%", "aria-valuenow": value
+        Swidth: value + "%", innerHTML: Math.round(value) + "%", "Aaria-valuenow": value
     });
 
 //Pega o id do radio button selecionado de um grupo
@@ -570,24 +570,29 @@ function getLayout(path, conatiner, fDone) {
 
 //MODALS
 var XModal = {
-    _modalConfigAx: null,
-    alertName: "alertXModal",
-    confirmName: "confirmXModal",
-    promptName: "promptXModal",
-    divNone: document.createElement("DIV").config({ Sdisplay: "none" }),
-    divBackdrop: document.createElement("DIV").addClass("modal-backdrop fade in"),
-    _configConfig: function (att, value) {
-        if (XModal._modalConfigAx[att] === undefined)
-            return { className: value }
-        if (XModal._modalConfigAx[att] === false)
-            return {};
-        XModal._modalConfigAx[att].className = (XModal._modalConfigAx[att].className) ?
-            value + " " + XModal._modalConfigAx[att].className : value;
-        return XModal._modalConfigAx[att];
-    },
-    _clickOutsideModal: function (e) {
-        if (e.target.hasClass("modal fade in"))
-            XModal.toggle(e.target.id, false);
+    _presets: {
+        _modalDelay: 5,
+        _modalConfigAx: null,
+        _alertName: "alertXModal",
+        _confirmName: "confirmXModal",
+        _promptName: "promptXModal",
+        _divNone: document.createElement("DIV").config({ Sdisplay: "none" }),
+        _divBackdrop: document.createElement("DIV").addClass("modal-backdrop fade in"),
+        _configConfig: function (att, value) {
+            if (XModal._presets._modalConfigAx[att] === undefined)
+                return { className: value }
+            if (XModal._presets._modalConfigAx[att] === false)
+                return {};
+            XModal._presets._modalConfigAx[att].className = (XModal._presets._modalConfigAx[att].className) ?
+                value + " " + XModal._presets._modalConfigAx[att].className : value;
+            return XModal._presets._modalConfigAx[att];
+        },
+        _clickOutsideModal: function (e) {
+            if (e.target.hasClass("modal fade in"))
+                XModal.toggle(e.target.id, false);
+        },
+        _okClick: null, _cancelClick: null, _promptFunc: null,
+        _confirmModal: null, _promptModal: null, _alertModal: null
     }
 };
 XModal.create = function (id, modalConfig) {
@@ -595,56 +600,58 @@ XModal.create = function (id, modalConfig) {
 
     modalConfig = modalConfig || {};
     modalConfig._XBtn = modalConfig._XBtn === undefined ? "x" : modalConfig._XBtn;
-    modalConfig._XBtn = modalConfig._XBtn === false ? XModal.divNone :
+    modalConfig._XBtn = modalConfig._XBtn === false ? XModal._presets._divNone :
         document.createElement('BUTTON').config({
             className: "close", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: modalConfig._XBtn
         });
 
-    modalConfig._head = modalConfig._head || XModal.divNone;
-    modalConfig._body = modalConfig._body || XModal.divNone;
+    modalConfig._head = modalConfig._head || XModal._presets._divNone;
+    modalConfig._body = modalConfig._body || XModal._presets._divNone;
 
     modalConfig._foot = modalConfig._foot === undefined ?
         document.createElement('BUTTON').config({
             className: "btn btn-default", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "Fechar"
-        }) : modalConfig._foot || XModal.divNone;
+        }) : modalConfig._foot || XModal._presets._divNone;
 
-    XModal._modalConfigAx = modalConfig;
+    XModal._presets._modalConfigAx = modalConfig;
 
-    document.getElementsByTagName("body")[0]
-        .append(document.createElement('DIV').config({ id: id, className: "modal fade" })
-            .append(document.createElement('DIV').config(XModal._configConfig("_configDialog", "modal-dialog"))
-                .append(document.createElement('DIV').config(XModal._configConfig("_configContent", "modal-content"))
-                    .append(document.createElement('DIV').config(XModal._configConfig("_configHead", "modal-header"))
+    return document.body
+        .appendChild(document.createElement('DIV').config({ id: id, className: "modal fade" })
+            .append(document.createElement('DIV').config(XModal._presets._configConfig("_configDialog", "modal-dialog"))
+                .append(document.createElement('DIV').config(XModal._presets._configConfig("_configContent", "modal-content"))
+                    .append(document.createElement('DIV').config(XModal._presets._configConfig("_configHead", "modal-header"))
                         .append(modalConfig._XBtn)
-                        .append(document.createElement('h4').config(XModal._configConfig("_configTitle", "modal-title")))
+                        .append(document.createElement('H4').config(XModal._presets._configConfig("_configTitle", "modal-title")))
                         .append(modalConfig._head))
-                    .append(document.createElement('DIV').config(XModal._configConfig("_configBody", "modal-body"))
+                    .append(document.createElement('DIV').config(XModal._presets._configConfig("_configBody", "modal-body"))
                     	.append(modalConfig._body))
-                    .append(document.createElement('DIV').config(XModal._configConfig("_configFoot", "modal-footer"))
+                    .append(document.createElement('DIV').config(XModal._presets._configConfig("_configFoot", "modal-footer"))
                     	.append(modalConfig._foot)))));
 };
 XModal.alert = function (text) {
-    if (!document.getElementById(XModal.alertName))
-        XModal.create(XModal.alertName, {
+    if (XModal._presets._alertModal !== null)
+        XModal._presets._alertModal.getElementsByTagName("label")[0].innerHTML = text;
+    else
+        XModal._presets._alertModal = XModal.create(XModal._presets._alertName, {
             _configContent: { style: { width: "50%", margin: "0px auto 0px auto" } },
             _configHead: { style: { border: "none" } },
             _configFoot: { style: { border: "none", marginTop: "0px" } },
-            _body: document.createElement("label").config({ innerHTML: text }),
+            _body: document.createElement("LABEL").config({ innerHTML: text }),
             _foot: document.createElement('BUTTON').config({
-                Fclick: () => XModal.toggle(XModal.alertName, false),
+                Fclick: () => XModal.toggle(XModal._presets._alertName, false),
                 innerHTML: "OK", className: "btn btn-default"
             })
         });
-    else getElement("#" + XModal.alertName + ":label")[0].innerHTML = text;
 
-    XModal.toggle(XModal.alertName, true);
+    XModal.toggle(XModal._presets._alertName, true);
+    return XModal._presets._alertModal;
 };
 XModal.confirm = function (text, func) {
-    if (document.getElementById(XModal.confirmName)) {
-        getElement("#" + XModal.confirmName + ":button")[0].removeEventListener("click", XModal.okClick);
-        getElement("#" + XModal.confirmName + ":button")[1].removeEventListener("click", XModal.cancelClick);
+    if (XModal._presets._confirmModal !== null) {
+        XModal._presets._confirmModal.getElementsByTagName("button")[0].removeEventListener("click", XModal._presets._okClick);
+        XModal._presets._confirmModal.getElementsByTagName("button")[1].removeEventListener("click", XModal._presets._cancelClick);
     } else
-        XModal.create(XModal.confirmName, {
+        XModal._presets._confirmModal = XModal.create(XModal._presets._confirmName, {
             _XBtn: false,
             _configHead: { Sdisplay: "none" },
             _body: document.createElement("label"),
@@ -657,19 +664,20 @@ XModal.confirm = function (text, func) {
               }))
         });
 
-    getElement("#" + XModal.confirmName + ":label")[0].innerHTML = text;
-    XModal.okClick = function () { XModal.toggle(XModal.confirmName, false); func(true); };
-    getElement("#" + XModal.confirmName + ":button")[0].addEventListener("click", XModal.okClick);
-    XModal.cancelClick = function () { XModal.toggle(XModal.confirmName, false); func(false); };
-    getElement("#" + XModal.confirmName + ":button")[1].addEventListener("click", XModal.cancelClick);
+    XModal._presets._confirmModal.getElementsByTagName("label")[0].innerHTML = text;
+    XModal._presets._okClick = function () { XModal.toggle(XModal._presets._confirmName, false); func(true); };
+    XModal._presets._confirmModal.getElementsByTagName("button")[0].addEventListener("click", XModal._presets._okClick);
+    XModal._presets._cancelClick = function () { XModal.toggle(XModal._presets._confirmName, false); func(false); };
+    XModal._presets._confirmModal.getElementsByTagName("button")[1].addEventListener("click", XModal._presets._cancelClick);
 
-    XModal.toggle(XModal.confirmName, true, { _clickOut: false });
+    XModal.toggle(XModal._presets._confirmName, true, { _clickOut: false });
+    return XModal._presets._confirmModal;
 };
 XModal.prompt = function (text, func) {
-    if (document.getElementById(XModal.promptName))
-        getElement("#" + XModal.promptName + ":button")[0].removeEventListener("click", XModal.promptFunc);
+    if (XModal._presets._promptModal !== null)
+        XModal._presets._promptModal.getElementsByTagName("button")[0].removeEventListener("click", XModal._presets._promptFunc);
     else
-        XModal.create(XModal.promptName, {
+        XModal._presets._promptModal = XModal.create(XModal._presets._promptName, {
             _foot: false, _XBtn: false, _head: false,
             _configHead: { style: { display: "none" } },
             _configBody: { style: { paddingTop: "none" } },
@@ -685,24 +693,25 @@ XModal.prompt = function (text, func) {
             _configFoot: { style: { display: "none" } }
         });
 
-    getElement("#" + XModal.promptName + ":label")[0].innerHTML = text;
-    getElement("#" + XModal.promptName + ":input")[0].value = "";
-    XModal.promptFunc = function () {
-        XModal.toggle(XModal.promptName, false);
-        func(getElement("#" + XModal.promptName + ":input")[0].value);
+    XModal._presets._promptModal.getElementsByTagName("label")[0].innerHTML = text;
+    XModal._presets._promptModal.getElementsByTagName("input")[0].value = "";
+    XModal._presets._promptFunc = function () {
+        XModal.toggle(XModal._presets._promptName, false);
+        func(XModal._presets._promptModal.getElementsByTagName("input")[0].value);
     };
-    getElement("#" + XModal.promptName + ":button")[0].addEventListener("click", XModal.promptFunc);
-    XModal.toggle(XModal.promptName, true, { _clickOut: false });
+    XModal._presets._promptModal.getElementsByTagName("button")[0].addEventListener("click", XModal._presets._promptFunc);
+    XModal.toggle(XModal._presets._promptName, true, { _clickOut: false });
+    return XModal._presets._promptModal;
 };
 XModal.toggle = function (id, content, modalConfig) {
     var element = document.getElementById(id);
     if (!document.body.hasClass("modal-open")) { //if para verificar data-toggle
         modalConfig = modalConfig || {};
         if (!element) return;
-        show(element[(content ? "add" : "remove") + "Class"]("in"), content, modalConfig._delay || 5);
+        show(element[(content ? "add" : "remove") + "Class"]("in"), content, modalConfig._delay || XModal._presets._modalDelay);
         if (modalConfig._clickOut !== false)
-            document.body[(content ? "add" : "remove") + "EventListener"]('click', XModal._clickOutsideModal);
-        document.body[(content ? "append" : "remove") + "Child"](XModal.divBackdrop);
+            document.body[(content ? "add" : "remove") + "EventListener"]('click', XModal._presets._clickOutsideModal);
+        document.body[(content ? "append" : "remove") + "Child"](XModal._presets._divBackdrop);
     } else document.body.removeClass("modal-open");
     if (!content && element.onHideModal) element.onHideModal();
 };
@@ -710,34 +719,36 @@ XModal.toggle = function (id, content, modalConfig) {
 
 //TITLE PERSONALIZADO
 var XTitle = {
-    titleName: "",
-    titleEl: null,
-    titleDelay: 0
+    _presets: {
+        _titleName: "personalizeTitle",
+        _titleEl: null,
+        _titleDelay: 20,
+        _titleStyle: {
+            padding: "3px",
+            border: "1px solid #666",
+            "border-right-width": "2px",
+            "border-bottom-width": "2px",
+            background: "#003459",
+            color: "#FFF",
+            font: "bold 9px Verdana, Arial, Helvetica, sans-serif",
+            "text-align": "left",
+            position: "absolute",
+            "z-index": 1000
+        }
+    }
 };
 XTitle.iniciaTitle = function (titleConfig) {
     titleConfig = titleConfig || {};
-    var style = {
-        padding: "3px",
-        border: "1px solid #666",
-        "border-right-width": "2px",
-        "border-bottom-width": "2px",
-        background: "#003459",
-        color: "#FFF",
-        font: "bold 9px Verdana, Arial, Helvetica, sans-serif",
-        "text-align": "left",
-        position: "absolute",
-        "z-index": 1000
-    };
-    if (titleConfig._style) Object.keys(titleConfig._style).forEach(att => style[att] = titleConfig._style[att]);
+    if (titleConfig._style) Object.keys(titleConfig._style).forEach(att => XTitle._presets._titleStyle[att] = titleConfig._style[att]);
 
-    XTitle.titleDelay = titleConfig._delay || 20;
-    XTitle.titleName = titleConfig._name || "personalizeTitle";
-    XTitle.titleEl = document.getElementById(XTitle.titleName) ||
-        document.getElementsByTagName("body")[0].appendChild(document.createElement("div").config({
-            id: XTitle.titleName, style: style
+    XTitle._presets._titleDelay = titleConfig._delay || XTitle._presets._titleDelay;
+    XTitle._presets._titleName = titleConfig._name || XTitle._presets._titleName;
+    XTitle._presets._titleEl = document.getElementById(XTitle._presets._titleName) ||
+        document.body.appendChild(document.createElement("div").config({
+            id: XTitle._presets._titleName, style: XTitle._presets._titleStyle
         }));
 
-    var getPlace = evt => XTitle.titleEl.config({
+    var getPlace = evt => XTitle._presets._titleEl.config({
         style: { left: (evt.pageX + 12) + "px", top: (evt.pageY + 20) + "px" }
     });
     document.onmousemove = getPlace;
@@ -745,11 +756,11 @@ XTitle.iniciaTitle = function (titleConfig) {
     XTitle.refreshTitle();
 };
 XTitle.refreshTitle = function () {
-    show(XTitle.titleEl, false);
+    show(XTitle._presets._titleEl, false);
     getElement("+title").forEach(function (el) {
-        el.setAttribute(XTitle.titleName, el.title);
+        el.setAttribute(XTitle._presets._titleName, el.title);
         el.removeAttribute("title");
-        el.onmouseover = function () { XTitle.showTitle(el.getAttribute(XTitle.titleName)) };
+        el.onmouseover = function () { XTitle.showTitle(el.getAttribute(XTitle._presets._titleName)) };
         el.onmouseout = function () { XTitle.showTitle() };
     });
 
@@ -757,16 +768,16 @@ XTitle.refreshTitle = function () {
     document.getElementsByTagName("title").toArray().forEach(function (el) {
         parent = el.parentElement;
         if (parent.tagName !== "HEAD") {
-            parent.setAttribute(XTitle.titleName, el.innerHTML);
+            parent.setAttribute(XTitle._presets._titleName, el.innerHTML);
             el.remove();
             parent.onmouseover = function () {
-                XTitle.showTitle(parent.getAttribute(XTitle.titleName))
+                XTitle.showTitle(parent.getAttribute(XTitle._presets._titleName))
             };
             parent.onmouseout = function () { XTitle.showTitle() };
         }
     });
 };
 XTitle.showTitle = function (text) {
-    text ? show(XTitle.titleEl, true, XTitle.titleDelay) : show(XTitle.titleEl, false);
-    XTitle.titleEl.config({ innerHTML: text || "" });
+    text ? show(XTitle._presets._titleEl, true, XTitle._presets._titleDelay) : show(XTitle._presets._titleEl, false);
+    XTitle._presets._titleEl.config({ innerHTML: text || "" });
 };
