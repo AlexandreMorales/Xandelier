@@ -54,6 +54,7 @@ var AjaxPuro = function (obAjax) {
                     var value;
                     try {
                         value = eval("(" + xhttp.responseText + ")");
+                        //value = JSON.parse(xhttp.responseText);
                     } catch (e) {
                         value = xhttp.responseText;
                     }
@@ -233,6 +234,15 @@ function getBrowser() {
         return "chrome";
     if (document.documentMode) // At least IE6
         return "ie";
+};
+
+function addObjectAttribute(object, name, value) {
+    object[name] = value;
+    return object;
+};
+function removeObjectAttribute(object, name) {
+    delete object[name];
+    return object;
 };
 
 // REMOVE ACENTOS
@@ -442,15 +452,19 @@ function getElement(selector, element, include) {
     element = element || document;
     var auxFunc, auxFilter, operatorAux = "", funcGetAtt = "",
         selectors = (getType(selector) === "array") ? selector :
-                            selector.replace(/#/g, ",#").replace(/\./g, ",.").replace(/:/g, ",:")
-                            .replace(/\+/g, ",+").replace(/&/g, ",&,").split(",").filter(s => s),
+                            selector.replace(/#/g, ",#").replace(/\./g, ",.").replace(/:/g, ",:").replace(/\+/g, ",+")
+                            .replace(/&&/g, ",&&,").replace(/\*/g, ",*,").replace(/\|\|/g, ",||,").split(",").filter(s => s),
         item = selectors.shift();
+    switch (item) {
+        case '*': return getElement(selectors, element.getElementsByTagName("*").toArray());
+        case '||': return element || getElement(selectors, element.parentNode);
+        case '&&': return getElement(selectors, element, true);
+    };
     switch (item[0]) {
-        case '&': return getElement(selectors, element, true);
         case '#': return getElement(selectors, element.getElementById(item.substr(1)));
         case '+':
             item = item.substr(1);
-            funcGetAtt = (item[0] === '!') ? (item = item.substr(1), "getDOMAttribute") : "getAttribute";
+            funcGetAtt = (item[0] === '+') ? (item = item.substr(1), "getDOMAttribute") : "getAttribute";
             item = item.replace(/=/g, ",=,").replace(/</g, ",<,").replace(/>/g, ",>,").split(",")
                 .reduce(function (arr, el) {
                     operatorAux = (el) ? (arr.push(operatorAux + el), "") : arr.pop();
@@ -482,7 +496,8 @@ function getElement(selector, element, include) {
             auxFilter = el => el.name === item;
             auxFunc = el => el.getElementsByName(item).toArray();
             break;
-    }
+    };
+
     return getElement(selectors, (include) ? element.filter(auxFilter) :
             (getType(element) === "array") ?
             	element.reduce((aux, el) => aux.concat(auxFunc(el)), []) : auxFunc(element));
@@ -546,7 +561,7 @@ var getCheckedRadioId = name =>
 
 //Pega todos os ids dos radio buttons selecionados de uma div
 var getAllCheckedRadioId = div =>
-    getElement("#" + div + ":input&+type=radio").filter(el => el.checked);
+    getElement("#" + div + ":input&&+type=radio").filter(el => el.checked);
 
 //Pega o layout de outra página
 function getLayout(path, conatiner, fDone) {
@@ -573,6 +588,7 @@ var XModal = {
     _presets: {
         _modalDelay: 5,
         _modalConfigAx: null,
+        _clickOut: null,
         _alertName: "alertXModal",
         _confirmName: "confirmXModal",
         _promptName: "promptXModal",
@@ -588,8 +604,10 @@ var XModal = {
             return XModal._presets._modalConfigAx[att];
         },
         _clickOutsideModal: function (e) {
-            if (e.target.hasClass("modal fade in"))
+            if (e.target.hasClass("modal fade in")) {
                 XModal.toggle(e.target.id, false);
+                if (XModal._presets._clickOut) XModal._presets._clickOut();
+            }
         },
         _okClick: null, _cancelClick: null, _promptFunc: null,
         _confirmModal: null, _promptModal: null, _alertModal: null
@@ -646,20 +664,20 @@ XModal.alert = function (text) {
     XModal.toggle(XModal._presets._alertName, true);
     return XModal._presets._alertModal;
 };
-XModal.confirm = function (text, func) {
+XModal.confirm = function (text, func, footConfig) {
     if (XModal._presets._confirmModal !== null) {
         XModal._presets._confirmModal.getElementsByTagName("button")[0].removeEventListener("click", XModal._presets._okClick);
         XModal._presets._confirmModal.getElementsByTagName("button")[1].removeEventListener("click", XModal._presets._cancelClick);
-    } else
+    } else 
         XModal._presets._confirmModal = XModal.create(XModal._presets._confirmName, {
             _XBtn: false,
             _configHead: { Sdisplay: "none" },
             _body: document.createElement("label"),
             _foot: document.createElement('DIV')
-              .append(document.createElement('BUTTON').config({
+              .append(document.createElement('BUTTON').config(footConfig._okButton || {
                   innerHTML: "OK", className: "btn btn-default"
               }))
-              .append(document.createElement('BUTTON').config({
+              .append(document.createElement('BUTTON').config(footConfig._cancelButton || {
                   innerHTML: "Cancela", className: "btn btn-default"
               }))
         });
@@ -709,8 +727,10 @@ XModal.toggle = function (id, content, modalConfig) {
         modalConfig = modalConfig || {};
         if (!element) return;
         show(element[(content ? "add" : "remove") + "Class"]("in"), content, modalConfig._delay || XModal._presets._modalDelay);
-        if (modalConfig._clickOut !== false)
+        if (modalConfig._clickOut !== false) {
+            if (content) XModal._presets._clickOut = modalConfig._clickOut;
             document.body[(content ? "add" : "remove") + "EventListener"]('click', XModal._presets._clickOutsideModal);
+        }
         document.body[(content ? "append" : "remove") + "Child"](XModal._presets._divBackdrop);
     } else document.body.removeClass("modal-open");
     if (!content && element.onHideModal) element.onHideModal();
