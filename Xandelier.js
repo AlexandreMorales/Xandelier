@@ -51,10 +51,11 @@ var AjaxPuro = function (obAjax) {
         if (xhttp.readyState == 4) {
             if (xhttp.status == 200) {
                 if (obAjax._done != undefined) {
+                    console.log(xhttp.responseText);
                     var value;
                     try {
-                        value = eval("(" + xhttp.responseText + ")");
-                        //value = JSON.parse(xhttp.responseText);
+                        //value = eval("(" + xhttp.responseText + ")");
+                        value = JSON.parse(xhttp.responseText);
                     } catch (e) {
                         value = xhttp.responseText;
                     }
@@ -445,62 +446,69 @@ Element.prototype.getElement = function (selector) {
     return getElement(selector, this);
 };
 
+var elementInicial = null;
 //Pega os elementos de acordo com o seletor enviado
-function getElement(selector, element, include) {
-    //console.log(selector);
-    if (!selector.length) return element;
-    element = element || document;
-    var auxFunc, auxFilter, operatorAux = "", funcGetAtt = "",
-        selectors = (getType(selector) === "array") ? selector :
-                            selector.replace(/#/g, ",#").replace(/\./g, ",.").replace(/:/g, ",:").replace(/\+/g, ",+")
-                            .replace(/&&/g, ",&&,").replace(/\*/g, ",*,").replace(/\|\|/g, ",||,").split(",").filter(s => s),
-        item = selectors.shift();
-    switch (item) {
-        case '*': return getElement(selectors, element.getElementsByTagName("*").toArray());
-        case '||': return element || getElement(selectors, element.parentNode);
-        case '&&': return getElement(selectors, element, true);
-    };
-    switch (item[0]) {
-        case '#': return getElement(selectors, element.getElementById(item.substr(1)));
-        case '+':
-            item = item.substr(1);
-            funcGetAtt = (item[0] === '+') ? (item = item.substr(1), "getDOMAttribute") : "getAttribute";
-            item = item.replace(/=/g, ",=,").replace(/</g, ",<,").replace(/>/g, ",>,").split(",")
-                .reduce(function (arr, el) {
-                    operatorAux = (el) ? (arr.push(operatorAux + el), "") : arr.pop();
-                    return arr;
-                }, []);
-            switch (item[1]) {
-                case "=": auxFilter = el => el[funcGetAtt](item[0]) == item[2]; break;
-                case "<": auxFilter = el => parseFloat(el[funcGetAtt](item[0])) < parseFloat(item[2]); break;
-                case ">": auxFilter = el => parseFloat(el[funcGetAtt](item[0])) > parseFloat(item[2]); break;
-                case "<=": auxFilter = el => parseFloat(el[funcGetAtt](item[0])) <= parseFloat(item[2]); break;
-                case ">=": auxFilter = el => parseFloat(el[funcGetAtt](item[0])) >= parseFloat(item[2]); break;
-                case undefined: default: auxFilter = el => el[funcGetAtt](item[0]); break;
-            }
-            if (element === document)
-                element = element.getElementsByTagName("*").toArray();
-            auxFunc = el => el.children.toArray().filter(auxFilter);
-            break;
-        case '.':
-            item = item.substr(1);
-            auxFilter = el => el.className.split(" ").contains(item.split(" "));
-            auxFunc = el => el.getElementsByClassName(item).toArray();
-            break;
-        case ':':
-            item = item.substr(1).toLowerCase();
-            auxFilter = el => el.tagName.toLowerCase() === item;
-            auxFunc = el => el.getElementsByTagName(item).toArray();
-            break;
-        default:
-            auxFilter = el => el.name === item;
-            auxFunc = el => el.getElementsByName(item).toArray();
-            break;
-    };
+function getElement(selector, element, config) {
+    try {
+        //console.log(selector);
+        if (!selector.length) return element;
+        config = config || {};
+        elementInicial = elementInicial || (element = element || document);
+        var auxFunc = null, auxFilter = null, operatorAux = "", funcGetAtt = "",
+            selectors = (getType(selector) === "array") ? selector :
+                        selector.replace(/#/g, ",#").replace(/\./g, ",.").replace(/:/g, ",:").replace(/\+/g, ",+").replace(/\+\,\+/g, ",++")
+                                .replace(/&&/g, ",&&,").replace(/\*/g, ",*,").replace(/\|\|/g, ",||,").replace(/\|\|/g, ",!,")
+                                .split(",").filter(s => s), item = selectors.shift();
+        switch (item) {
+            case '*': return getElement(selectors, element.getElementsByTagName("*").toArray());
+            case '||': return element || getElement(selectors, elementInicial);
+            case '&&': return getElement(selectors, element, { _include: true });
+            case '!': config._not = true; return getElement(selectors, element, config);
+        };
+        switch (item[0]) {
+            case '#': return (element === document) ? getElement(selectors, element.getElementById(item.substr(1))) : undefined;
+            case '+':
+                item = item.substr(1);
+                funcGetAtt = (item[0] === '+') ? (item = item.substr(1), "getDOMAttribute") : "getAttribute";
+                item = item.replace(/=/g, ",=,").replace(/</g, ",<,").replace(/>/g, ",>,").split(",")
+                    .reduce(function (arr, el) {
+                        operatorAux = (el) ? (arr.push(operatorAux + el), "") : arr.pop();
+                        return arr;
+                    }, []);
+                switch (item[1]) {
+                    case "=": auxFilter = el => ((el[funcGetAtt](item[0]) == item[2]) ^ config._not); break;
+                    case "<": auxFilter = el => ((parseFloat(el[funcGetAtt](item[0])) < parseFloat(item[2])) ^ config._not); break;
+                    case ">": auxFilter = el => ((parseFloat(el[funcGetAtt](item[0])) > parseFloat(item[2])) ^ config._not); break;
+                    case "<=": auxFilter = el => ((parseFloat(el[funcGetAtt](item[0])) <= parseFloat(item[2])) ^ config._not); break;
+                    case ">=": auxFilter = el => ((parseFloat(el[funcGetAtt](item[0])) >= parseFloat(item[2])) ^ config._not); break;
+                    case undefined: default: auxFilter = el => ((!!el[funcGetAtt](item[0])) ^ config._not); break;
+                }
+                if (element === document)
+                    element = element.getElementsByTagName("*").toArray();
+                auxFunc = el => el.children.toArray().filter(auxFilter);
+                break;
+            case '.':
+                item = item.substr(1);
+                auxFilter = el => (el.className.split(" ").contains(item.split(" ")) ^ config._not);
+                auxFunc = el => el.getElementsByClassName(item).toArray();
+                break;
+            case ':':
+                item = item.substr(1).toLowerCase();
+                auxFilter = el => ((el.tagName.toLowerCase() === item) ^ config._not);
+                auxFunc = el => el.getElementsByTagName(item).toArray();
+                break;
+            default:
+                auxFilter = el => ((el.name === item) ^ config._not);
+                auxFunc = el => (element === document) ? el.getElementsByName(item).toArray() : false;
+                break;
+        };
 
-    return getElement(selectors, (include) ? element.filter(auxFilter) :
-            (getType(element) === "array") ?
-            	element.reduce((aux, el) => aux.concat(auxFunc(el)), []) : auxFunc(element));
+        return getElement(selectors, config._include ?
+                        (getType(element) === "array") ? element.filter(auxFilter) : [element].filter(auxFilter)[0] :
+                        (getType(element) === "array") ? element.reduce((aux, el) => aux.concat(auxFunc(el)), []) : auxFunc(element));
+    } finally {
+        elementInicial = null;
+    }
 };
 
 var showObject = {
@@ -668,7 +676,7 @@ XModal.confirm = function (text, func, footConfig) {
     if (XModal._presets._confirmModal !== null) {
         XModal._presets._confirmModal.getElementsByTagName("button")[0].removeEventListener("click", XModal._presets._okClick);
         XModal._presets._confirmModal.getElementsByTagName("button")[1].removeEventListener("click", XModal._presets._cancelClick);
-    } else 
+    } else
         XModal._presets._confirmModal = XModal.create(XModal._presets._confirmName, {
             _XBtn: false,
             _configHead: { Sdisplay: "none" },
