@@ -815,5 +815,5 @@ var XTitle = (function () {
             });
         }
 
-        return { iniciaTitle: iniciaTitle, refreshTitle: refreshTitle };
+    return { iniciaTitle: iniciaTitle, refreshTitle: refreshTitle };
 })();
