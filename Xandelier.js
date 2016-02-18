@@ -3,26 +3,26 @@
 
 /*
 Parametros:
-	obAjax: Objeto com as configurações do ajax:
-		_path: (String) URL do ajax
+    obAjax: Objeto com as configurações do ajax:
+        _path: (String) URL do ajax
                 (pode estar pré-setado a váriavel window.rootUrl que diz aonde a aplicação se encontra);
-		_type: (String) Tipo de requisição em caixa alta(POST, GET, PUT, DELETE);
-		_dataType: (String OU Boolean) Tipo de data a ser enviado pelo ajax, 
-				se for false não irá adicionar Data-type no header do request,
-				se não for enviada o valor default é 'json';
-		_contentType: (String OU Boolean) Tipo de conteudo a ser enviado pelo ajax, 
-				se for false não irá adicionar Content-type no header do request,
-				se não for enviada o valor default é 'application/x-www-form-urlencoded; charset=UTF-8';
-		_arguments: Paremetros para enviar no ajax;
-		_done: (Function) função a ser executada após retorno e sucesso do ajax;
-				Paramentros:
-					value: O que retornou do ajax;
-					xhttp: O objeto XMLHttpRequest do ajax;
-		_error: (Function) função a ser executada se ocorrer algum erro durante o ajax;
-				Paramentros:
-					xhttp: O objeto XMLHttpRequest do ajax;
-					status: O status do ajax;
-					responseText: O que retornou do ajax;
+        _type: (String) Tipo de requisição em caixa alta(POST, GET, PUT, DELETE);
+        _dataType: (String OU Boolean) Tipo de data a ser enviado pelo ajax, 
+                se for false não irá adicionar Data-type no header do request,
+                se não for enviada o valor default é 'json';
+        _contentType: (String OU Boolean) Tipo de conteudo a ser enviado pelo ajax, 
+                se for false não irá adicionar Content-type no header do request,
+                se não for enviada o valor default é 'application/x-www-form-urlencoded; charset=UTF-8';
+        _arguments: Paremetros para enviar no ajax;
+        _done: (Function) função a ser executada após retorno e sucesso do ajax;
+                Paramentros:
+                    value: O que retornou do ajax;
+                    xhttp: O objeto XMLHttpRequest do ajax;
+        _error: (Function) função a ser executada se ocorrer algum erro durante o ajax;
+                Paramentros:
+                    xhttp: O objeto XMLHttpRequest do ajax;
+                    status: O status do ajax;
+                    responseText: O que retornou do ajax;
 */
 //Ajax com XMLHttpRequest
 var AjaxPuro = function (obAjax) {
@@ -35,9 +35,9 @@ var AjaxPuro = function (obAjax) {
         switch (getType(obj)) {
             case 'object':
                 _arguments = Object.keys(obj).reduce((args, attr) => args +
-					(getType(obj[attr]) === "array" ?
-						obj[attr].reduce((indices, el) => indices + attr + "=" + el + "&", "") :
-	                    attr + "=" + obj[attr] + "&"), POST ? "" : "?");
+                    (getType(obj[attr]) === "array" ?
+                        obj[attr].reduce((indices, el) => indices + attr + "=" + el + "&", "") :
+                        attr + "=" + obj[attr] + "&"), POST ? "" : "?");
                 break;
             case 'string': _arguments = (POST ? "" : "/") + obj; break;
             default: _arguments = obj; break;
@@ -77,14 +77,14 @@ var AjaxPuro = function (obAjax) {
         if (obAjax._dataType !== false) xhttp.setRequestHeader("Data-type", obAjax._dataType || 'json');
         if (obAjax._contentType !== false)
             xhttp.setRequestHeader("Content-type",
-        		obAjax._contentType || 'application/x-www-form-urlencoded; charset=UTF-8');
+                obAjax._contentType || 'application/x-www-form-urlencoded; charset=UTF-8');
         xhttp.send(_arguments);
     } else xhttp.send();
 };
 
 /*
 Parametros:
-	obj: Objeto enviado;
+    obj: Objeto enviado;
 Retorno: (String) O tipo do objeto em minúsuculo;
 */
 //Pega o tipo do objeto mandado
@@ -92,12 +92,12 @@ var getType = (obj) => ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLower
 
 /*
 Parametros:
-	obj: Objeto com as configurações do processamento:
-		_percent: (String) Id da barra de progresso a ser atualizada durante o processamento;
-		_array: (Array) Array a ser processado;
-		_length: (Int) Tamanho do array enviado;
-		_process: (Function) Função que na qual os elementos do array serão processados;
-		_done: (Function) Função a ser executada após o término do processamento;
+    obj: Objeto com as configurações do processamento:
+        _percent: (String) Id da barra de progresso a ser atualizada durante o processamento;
+        _array: (Array) Array a ser processado;
+        _length: (Int) Tamanho do array enviado;
+        _process: (Function) Função que na qual os elementos do array serão processados;
+        _done: (Function) Função a ser executada após o término do processamento;
 */
 //Processa array usando setTimeout
 function processArray(obj) {
@@ -114,8 +114,8 @@ function processArray(obj) {
 
 /*
 Parametros:
-	array1: (Array) Primeiro array;
-	array2: (Array) Segundo array;
+    array1: (Array) Primeiro array;
+    array2: (Array) Segundo array;
 Retorno: (Array) Array contendo a diferença entre os dois arrays enviados;
 */
 //Retorna a diferença entre dois arrays.
@@ -126,7 +126,7 @@ function diferencaArrays(array1, array2) {
 
 /*
 Parametros:
-	array: (Array) Array a ser embaralhado;
+    array: (Array) Array a ser embaralhado;
 Retorno: (Array) Array embaralhado;
 */
 //Embaralha array
@@ -172,10 +172,10 @@ var HexToB = h => parseInt((cutHex(h)).substring(4, 6), 16);
 
 /*
 Parametros:
-	selection: (Array) Array de elementos a serem buscados;
-	el: (String OU Number) elemento a ser buscado;
-	att: (String) Atributo de comparação entre os elementos do array,
-			se não for enviada então a regra será comparar elemento por elemento;
+    selection: (Array) Array de elementos a serem buscados;
+    el: (String OU Number) elemento a ser buscado;
+    att: (String) Atributo de comparação entre os elementos do array,
+            se não for enviada então a regra será comparar elemento por elemento;
 Retorno: (Array) Array com os elementos filtrados pela busca;
 */
 //Retorna lista com itens contidos na lista recebida de acordo com a string recebida.
@@ -184,10 +184,10 @@ var search = (selection, el, att) =>
 
 /*
 Parametros:
-	fun: (Function) Regra para separar elementos únicos no array,
-			se não for enviada então a regra será comparar elemento por elemento;
-	map: (Boolean) Se for verdadeiro então retornará o array resultado da regra enviada,
-			se não então retornára o próprio array com elementos únicos;
+    fun: (Function) Regra para separar elementos únicos no array,
+            se não for enviada então a regra será comparar elemento por elemento;
+    map: (Boolean) Se for verdadeiro então retornará o array resultado da regra enviada,
+            se não então retornára o próprio array com elementos únicos;
 Retorno: (Array) O próprio array com elementos únicos de acordo com a regra enviada;
 */
 //Traz um array de elementos únicos
@@ -205,7 +205,7 @@ Array.prototype.unique = function (fun, map) {
 
 /*
 Parametros:
-	element: Elemento ou sequência de elementos a ser verificado;
+    element: Elemento ou sequência de elementos a ser verificado;
 Retorno: (Boolean) Se o elemento enviado está no próprio array;
 */
 //Verifica se o elemento está no array
@@ -368,7 +368,7 @@ NodeList.prototype.toArray = function () { return Array.prototype.slice.call(thi
 
 /*
 Parametros:
-	className: (String) Classe a ser verificada;
+    className: (String) Classe a ser verificada;
 Retorno: (Boolean) Se o próprio elemento possui classe enviada;
 */
 //Verifica se elemento possui a classe enviada
@@ -446,113 +446,114 @@ Element.prototype.getElement = function (selector) {
     return getElement(selector, this);
 };
 
-var elementInicial = null;
 //Pega os elementos de acordo com o seletor enviado
-function getElement(selector, element, config) {
-    try {
-        //console.log(selector);
-        if (!selector.length) return element;
-        config = config || {};
-        elementInicial = elementInicial || (element = element || document);
-        var auxFunc = null, auxFilter = null, operatorAux = "", funcGetAtt = "",
-            selectors = (getType(selector) === "array") ? selector :
-                        selector.replace(/#/g, ",#").replace(/\./g, ",.").replace(/:/g, ",:").replace(/\+/g, ",+").replace(/\+\,\+/g, ",++")
-                                .replace(/&&/g, ",&&,").replace(/\*/g, ",*,").replace(/\|\|/g, ",||,").replace(/\|\|/g, ",!,")
-                                .split(",").filter(s => s), item = selectors.shift();
-        switch (item) {
-            case '*': return getElement(selectors, element.getElementsByTagName("*").toArray());
-            case '||': return element || getElement(selectors, elementInicial);
-            case '&&': return getElement(selectors, element, { _include: true });
-            case '!': config._not = true; return getElement(selectors, element, config);
-        };
-        switch (item[0]) {
-            case '#': return (element === document) ? getElement(selectors, element.getElementById(item.substr(1))) : undefined;
-            case '+':
-                item = item.substr(1);
-                funcGetAtt = (item[0] === '+') ? (item = item.substr(1), "getDOMAttribute") : "getAttribute";
-                item = item.replace(/=/g, ",=,").replace(/</g, ",<,").replace(/>/g, ",>,").split(",")
-                    .reduce(function (arr, el) {
-                        operatorAux = (el) ? (arr.push(operatorAux + el), "") : arr.pop();
-                        return arr;
-                    }, []);
-                switch (item[1]) {
-                    case "=": auxFilter = el => ((el[funcGetAtt](item[0]) == item[2]) ^ config._not); break;
-                    case "<": auxFilter = el => ((parseFloat(el[funcGetAtt](item[0])) < parseFloat(item[2])) ^ config._not); break;
-                    case ">": auxFilter = el => ((parseFloat(el[funcGetAtt](item[0])) > parseFloat(item[2])) ^ config._not); break;
-                    case "<=": auxFilter = el => ((parseFloat(el[funcGetAtt](item[0])) <= parseFloat(item[2])) ^ config._not); break;
-                    case ">=": auxFilter = el => ((parseFloat(el[funcGetAtt](item[0])) >= parseFloat(item[2])) ^ config._not); break;
-                    case undefined: default: auxFilter = el => ((!!el[funcGetAtt](item[0])) ^ config._not); break;
-                }
-                if (element === document)
-                    element = element.getElementsByTagName("*").toArray();
-                auxFunc = el => el.children.toArray().filter(auxFilter);
-                break;
-            case '.':
-                item = item.substr(1);
-                auxFilter = el => (el.className.split(" ").contains(item.split(" ")) ^ config._not);
-                auxFunc = el => el.getElementsByClassName(item).toArray();
-                break;
-            case ':':
-                item = item.substr(1).toLowerCase();
-                auxFilter = el => ((el.tagName.toLowerCase() === item) ^ config._not);
-                auxFunc = el => el.getElementsByTagName(item).toArray();
-                break;
-            default:
-                auxFilter = el => ((el.name === item) ^ config._not);
-                auxFunc = el => (element === document) ? el.getElementsByName(item).toArray() : false;
-                break;
-        };
+var getElement = (function(){
+    var elementInicial = null;
+    return function(selector, element, config) {
+        try {
+            console.log(selector);
+            if (!selector.length) return element;
+            config = config || {};
+            elementInicial = elementInicial || (element = element || document);
+            var auxFunc = null, auxFilter = null, operatorAux = "", funcGetAtt = "",
+                selectors = (getType(selector) === "array") ? selector :
+                            selector.replace(/#/g, ",#").replace(/\./g, ",.").replace(/:/g, ",:").replace(/\+/g, ",+").replace(/\+\,\+/g, ",++")
+                                    .replace(/\&\&/g, ",&&,").replace(/\*/g, ",*,").replace(/\|\|/g, ",||,").replace(/\!/g, ",!,")
+                                    .split(",").filter(s => s), item = selectors.shift();
+            switch (item) {
+                case '*': return getElement(selectors, element.getElementsByTagName("*").toArray());
+                case '||': return element || getElement(selectors, elementInicial);
+                case '&&': return getElement(selectors, element, { _include: true });
+                case '!': config._not = true; return getElement(selectors, element, config);
+            };
+            switch (item[0]) {
+                case '#': return (element === document) ? getElement(selectors, element.getElementById(item.substr(1))) : undefined;
+                case '+':
+                    item = item.substr(1);
+                    funcGetAtt = (item[0] === '+') ? (item = item.substr(1), "getDOMAttribute") : "getAttribute";
+                    item = item.replace(/=/g, ",=,").replace(/</g, ",<,").replace(/>/g, ",>,").split(",")
+                        .reduce(function (arr, el) {
+                            operatorAux = (el) ? (arr.push(operatorAux + el), "") : arr.pop();
+                            return arr;
+                        }, []);
+                    switch (item[1]) {
+                        case "=": auxFilter = el => ((el[funcGetAtt](item[0]) == item[2]) ^ config._not); break;
+                        case "<": auxFilter = el => ((parseFloat(el[funcGetAtt](item[0])) < parseFloat(item[2])) ^ config._not); break;
+                        case ">": auxFilter = el => ((parseFloat(el[funcGetAtt](item[0])) > parseFloat(item[2])) ^ config._not); break;
+                        case "<=": auxFilter = el => ((parseFloat(el[funcGetAtt](item[0])) <= parseFloat(item[2])) ^ config._not); break;
+                        case ">=": auxFilter = el => ((parseFloat(el[funcGetAtt](item[0])) >= parseFloat(item[2])) ^ config._not); break;
+                        case undefined: default: auxFilter = el => ((!!el[funcGetAtt](item[0])) ^ config._not); break;
+                    }
+                    if (element === document)
+                        element = element.getElementsByTagName("*").toArray();
+                    auxFunc = el => el.children.toArray().filter(auxFilter);
+                    break;
+                case '.':
+                    item = item.substr(1);
+                    auxFilter = el => (el.className.split(" ").contains(item.split(" ")) ^ config._not);
+                    auxFunc = el => el.getElementsByClassName(item).toArray();
+                    break;
+                case ':':
+                    item = item.substr(1).toLowerCase();
+                    auxFilter = el => ((el.tagName.toLowerCase() === item) ^ config._not);
+                    auxFunc = el => el.getElementsByTagName(item).toArray();
+                    break;
+                default:
+                    auxFilter = el => ((el.name === item) ^ config._not);
+                    auxFunc = el => (element === document) ? el.getElementsByName(item).toArray() : false;
+                    break;
+            };
 
-        return getElement(selectors, config._include ?
-                        (getType(element) === "array") ? element.filter(auxFilter) : [element].filter(auxFilter)[0] :
-                        (getType(element) === "array") ? element.reduce((aux, el) => aux.concat(auxFunc(el)), []) : auxFunc(element));
-    } finally {
-        elementInicial = null;
-    }
-};
-
-var showObject = {
-    valueShowBool: false,
-    sameElement: {}
-};
+            return getElement(selectors, config._include ?
+                            (getType(element) === "array") ? element.filter(auxFilter) : [element].filter(auxFilter)[0] :
+                            (getType(element) === "array") ? element.reduce((aux, el) => aux.concat(auxFunc(el)), []) : auxFunc(element));
+        } finally {
+            elementInicial = null;
+        }
+    };
+})()
 /*
 Parametros:
-	element: (String OU HtmlElement) String com o id do elemento OU Elemento a ser mostrado ou escondido;
-	value:   (Boolean) Valor para esconder ou mostrar o Elemento, 
-				se não for mandado então o método retorna o display do Elemento enviado;
-	delay:   (Number) Tempo em ms para mostrar ou esconder o Elemento;
+    element: (String OU HtmlElement) String com o id do elemento OU Elemento a ser mostrado ou escondido;
+    value:   (Boolean) Valor para esconder ou mostrar o Elemento, 
+                se não for mandado então o método retorna o display do Elemento enviado;
+    delay:   (Number) Tempo em ms para mostrar ou esconder o Elemento;
 */
 //Mostra ou esconde elementos
-function show(element, value, delay) {
-    showObject.valueShowBool = value;
-    element = (getType(element) === "string") ?
-    			document.getElementById(element) : element;
-    showObject.sameElement = element;
-    if (value === undefined)
-        return element.style.display;
-    if (delay === undefined)
-        element.style.display = value ? 'block' : 'none';
-    else {
-        showObject.sameElement = {};
-        var op = showObject.valueShowBool ? 0.1 : 1;  // initial opacity
-        element.config({ style: { display: (value ? 'block' : 'none'), opacity: op } });
-        var timer = setInterval(function () {
-            if (op > 1 || op < 0.1) {
-                clearInterval(timer);
-                element.style.display = value ? 'block' : 'none';
-            } else if (showObject.sameElement.id === element.id) {
-                clearInterval(timer);
-                element.style.display = showObject.valueShowBool ? 'block' : 'none';
-            }
-            element.config({ style: { opacity: op, filter: 'alpha(opacity=' + op * 100 + ")" } });
-            op = op + (op * 0.1) * (value ? 1 : -1);
-        }, delay);
-    }
-};
+var show = (function() {
+    var valueShowBool = false,
+    sameElement = {}
+    return function(element, value, delay) {
+        valueShowBool = value;
+        element = (getType(element) === "string") ?
+                    document.getElementById(element) : element;
+        sameElement = element;
+        if (value === undefined)
+            return element.style.display;
+        if (delay === undefined)
+            element.style.display = value ? 'block' : 'none';
+        else {
+            sameElement = {};
+            var op = valueShowBool ? 0.1 : 1;  // initial opacity
+            element.config({ style: { display: (value ? 'block' : 'none'), opacity: op } });
+            var timer = setInterval(function () {
+                if (op > 1 || op < 0.1) {
+                    clearInterval(timer);
+                    element.style.display = value ? 'block' : 'none';
+                } else if (sameElement.id === element.id) {
+                    clearInterval(timer);
+                    element.style.display = valueShowBool ? 'block' : 'none';
+                }
+                element.config({ style: { opacity: op, filter: 'alpha(opacity=' + op * 100 + ")" } });
+                op = op + (op * 0.1) * (value ? 1 : -1);
+            }, delay);
+        }
+    };
+})();
 
 /*
 Parametros:
-	el: (String) Tag do elemento a ser criado ('DIV', 'LABEL', 'SPAN', ...);
+    el: (String) Tag do elemento a ser criado ('DIV', 'LABEL', 'SPAN', ...);
 */
 //Cria um elemento HTML novo
 var createElement = (el) => document.createElement(el);
@@ -592,220 +593,214 @@ function getLayout(path, conatiner, fDone) {
 };
 
 //MODALS
-var XModal = {
-    _presets: {
-        _modalDelay: 5,
-        _modalConfigAx: null,
-        _clickOut: null,
-        _alertName: "alertXModal",
-        _confirmName: "confirmXModal",
-        _promptName: "promptXModal",
-        _divNone: document.createElement("DIV").config({ Sdisplay: "none" }),
-        _divBackdrop: document.createElement("DIV").addClass("modal-backdrop fade in"),
-        _configConfig: function (att, value) {
-            if (XModal._presets._modalConfigAx[att] === undefined)
-                return { className: value }
-            if (XModal._presets._modalConfigAx[att] === false)
-                return {};
-            XModal._presets._modalConfigAx[att].className = (XModal._presets._modalConfigAx[att].className) ?
-                value + " " + XModal._presets._modalConfigAx[att].className : value;
-            return XModal._presets._modalConfigAx[att];
-        },
-        _clickOutsideModal: function (e) {
-            if (e.target.hasClass("modal fade in")) {
-                XModal.toggle(e.target.id, false);
-                if (XModal._presets._clickOut) XModal._presets._clickOut();
-            }
-        },
-        _okClick: null, _cancelClick: null, _promptFunc: null,
-        _confirmModal: null, _promptModal: null, _alertModal: null
-    }
-};
-XModal.create = function (id, modalConfig) {
-    var closeModal = () => XModal.toggle(id, false);
-
-    modalConfig = modalConfig || {};
-    modalConfig._XBtn = modalConfig._XBtn === undefined ? "x" : modalConfig._XBtn;
-    modalConfig._XBtn = modalConfig._XBtn === false ? XModal._presets._divNone :
-        document.createElement('BUTTON').config({
-            className: "close", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: modalConfig._XBtn
-        });
-
-    modalConfig._head = modalConfig._head || XModal._presets._divNone;
-    modalConfig._body = modalConfig._body || XModal._presets._divNone;
-
-    modalConfig._foot = modalConfig._foot === undefined ?
-        document.createElement('BUTTON').config({
-            className: "btn btn-default", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "Fechar"
-        }) : modalConfig._foot || XModal._presets._divNone;
-
-    XModal._presets._modalConfigAx = modalConfig;
-
-    return document.body
-        .appendChild(document.createElement('DIV').config({ id: id, className: "modal fade" })
-            .append(document.createElement('DIV').config(XModal._presets._configConfig("_configDialog", "modal-dialog"))
-                .append(document.createElement('DIV').config(XModal._presets._configConfig("_configContent", "modal-content"))
-                    .append(document.createElement('DIV').config(XModal._presets._configConfig("_configHead", "modal-header"))
-                        .append(modalConfig._XBtn)
-                        .append(document.createElement('H4').config(XModal._presets._configConfig("_configTitle", "modal-title")))
-                        .append(modalConfig._head))
-                    .append(document.createElement('DIV').config(XModal._presets._configConfig("_configBody", "modal-body"))
-                    	.append(modalConfig._body))
-                    .append(document.createElement('DIV').config(XModal._presets._configConfig("_configFoot", "modal-footer"))
-                    	.append(modalConfig._foot)))));
-};
-XModal.alert = function (text) {
-    if (XModal._presets._alertModal !== null)
-        XModal._presets._alertModal.getElementsByTagName("label")[0].innerHTML = text;
-    else
-        XModal._presets._alertModal = XModal.create(XModal._presets._alertName, {
-            _configContent: { style: { width: "50%", margin: "0px auto 0px auto" } },
-            _configHead: { style: { border: "none" } },
-            _configFoot: { style: { border: "none", marginTop: "0px" } },
-            _body: document.createElement("LABEL").config({ innerHTML: text }),
-            _foot: document.createElement('BUTTON').config({
-                Fclick: () => XModal.toggle(XModal._presets._alertName, false),
-                innerHTML: "OK", className: "btn btn-default"
-            })
-        });
-
-    XModal.toggle(XModal._presets._alertName, true);
-    return XModal._presets._alertModal;
-};
-XModal.confirm = function (text, func, footConfig) {
-    if (XModal._presets._confirmModal !== null) {
-        XModal._presets._confirmModal.getElementsByTagName("button")[0].removeEventListener("click", XModal._presets._okClick);
-        XModal._presets._confirmModal.getElementsByTagName("button")[1].removeEventListener("click", XModal._presets._cancelClick);
-    } else
-        XModal._presets._confirmModal = XModal.create(XModal._presets._confirmName, {
-            _XBtn: false,
-            _configHead: { Sdisplay: "none" },
-            _body: document.createElement("label"),
-            _foot: document.createElement('DIV')
-              .append(document.createElement('BUTTON').config(footConfig._okButton || {
-                  innerHTML: "OK", className: "btn btn-default"
-              }))
-              .append(document.createElement('BUTTON').config(footConfig._cancelButton || {
-                  innerHTML: "Cancela", className: "btn btn-default"
-              }))
-        });
-
-    XModal._presets._confirmModal.getElementsByTagName("label")[0].innerHTML = text;
-    XModal._presets._okClick = function () { XModal.toggle(XModal._presets._confirmName, false); func(true); };
-    XModal._presets._confirmModal.getElementsByTagName("button")[0].addEventListener("click", XModal._presets._okClick);
-    XModal._presets._cancelClick = function () { XModal.toggle(XModal._presets._confirmName, false); func(false); };
-    XModal._presets._confirmModal.getElementsByTagName("button")[1].addEventListener("click", XModal._presets._cancelClick);
-
-    XModal.toggle(XModal._presets._confirmName, true, { _clickOut: false });
-    return XModal._presets._confirmModal;
-};
-XModal.prompt = function (text, func) {
-    if (XModal._presets._promptModal !== null)
-        XModal._presets._promptModal.getElementsByTagName("button")[0].removeEventListener("click", XModal._presets._promptFunc);
-    else
-        XModal._presets._promptModal = XModal.create(XModal._presets._promptName, {
-            _foot: false, _XBtn: false, _head: false,
-            _configHead: { style: { display: "none" } },
-            _configBody: { style: { paddingTop: "none" } },
-            _body: document.createElement('DIV')
-              .append(document.createElement("label")).append(document.createElement("BR"))
-              .append(document.createElement('DIV').config({ className: "input-group" })
-                .append(document.createElement("INPUT").config({ type: "text", className: "form-control", SmaxWidth: "none" }))
-                .append(document.createElement("SPAN").config({ className: "input-group-btn" })
-                  .append(document.createElement("BUTTON").config({
-                      className: "btn btn-defaul", type: "button", innerHTML: "OK", Sborder: "none"
-                  }))
-                )),
-            _configFoot: { style: { display: "none" } }
-        });
-
-    XModal._presets._promptModal.getElementsByTagName("label")[0].innerHTML = text;
-    XModal._presets._promptModal.getElementsByTagName("input")[0].value = "";
-    XModal._presets._promptFunc = function () {
-        XModal.toggle(XModal._presets._promptName, false);
-        func(XModal._presets._promptModal.getElementsByTagName("input")[0].value);
-    };
-    XModal._presets._promptModal.getElementsByTagName("button")[0].addEventListener("click", XModal._presets._promptFunc);
-    XModal.toggle(XModal._presets._promptName, true, { _clickOut: false });
-    return XModal._presets._promptModal;
-};
-XModal.toggle = function (id, content, modalConfig) {
-    var element = document.getElementById(id);
-    if (!document.body.hasClass("modal-open")) { //if para verificar data-toggle
-        modalConfig = modalConfig || {};
-        if (!element) return;
-        show(element[(content ? "add" : "remove") + "Class"]("in"), content, modalConfig._delay || XModal._presets._modalDelay);
-        if (modalConfig._clickOut !== false) {
-            if (content) XModal._presets._clickOut = modalConfig._clickOut;
-            document.body[(content ? "add" : "remove") + "EventListener"]('click', XModal._presets._clickOutsideModal);
+var XModal = (function(){
+    var _modalDelay = 5,
+    _modalConfigAx = null,
+    _clickOut = null,
+    _alertName = "alertXModal",
+    _confirmName = "confirmXModal",
+    _promptName = "promptXModal",
+    _divNone = document.createElement("DIV").config({ Sdisplay: "none" }),
+    _divBackdrop = document.createElement("DIV").addClass("modal-backdrop fade in"),
+    _configConfig = function (att, value) {
+        if (_modalConfigAx[att] === undefined)
+            return { className: value }
+        if (_modalConfigAx[att] === false)
+            return {};
+        _modalConfigAx[att].className = (_modalConfigAx[att].className) ?
+            value + " " + _modalConfigAx[att].className : value;
+        return _modalConfigAx[att];
+    },
+    _clickOutsideModal = function (e) {
+        if (e.target.hasClass("modal fade in")) {
+            toggle(e.target.id, false);
+            if (_clickOut) _clickOut();
         }
-        document.body[(content ? "append" : "remove") + "Child"](XModal._presets._divBackdrop);
-    } else document.body.removeClass("modal-open");
-    if (!content && element.onHideModal) element.onHideModal();
-};
+    },
+    _okClick = null, _cancelClick = null, _promptFunc = null,
+    _confirmModal = null, _promptModal = null, _alertModal = null,
+    create = function (id, modalConfig) {
+        var closeModal = () => toggle(id, false);
+
+        modalConfig = modalConfig || {};
+        modalConfig._XBtn = modalConfig._XBtn === undefined ? "x" : modalConfig._XBtn;
+        modalConfig._XBtn = modalConfig._XBtn === false ? _divNone :
+            document.createElement('BUTTON').config({
+                className: "close", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: modalConfig._XBtn
+            });
+
+        modalConfig._head = modalConfig._head || _divNone;
+        modalConfig._body = modalConfig._body || _divNone;
+
+        modalConfig._foot = modalConfig._foot === undefined ?
+            document.createElement('BUTTON').config({
+                className: "btn btn-default", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "Fechar"
+            }) : modalConfig._foot || _divNone;
+
+        _modalConfigAx = modalConfig;
+
+        return document.body
+            .appendChild(document.createElement('DIV').config({ id: id, className: "modal fade" })
+                .append(document.createElement('DIV').config(_configConfig("_configDialog", "modal-dialog"))
+                    .append(document.createElement('DIV').config(_configConfig("_configContent", "modal-content"))
+                        .append(document.createElement('DIV').config(_configConfig("_configHead", "modal-header"))
+                            .append(modalConfig._XBtn)
+                            .append(document.createElement('H4').config(_configConfig("_configTitle", "modal-title")))
+                            .append(modalConfig._head))
+                        .append(document.createElement('DIV').config(_configConfig("_configBody", "modal-body"))
+                            .append(modalConfig._body))
+                        .append(document.createElement('DIV').config(_configConfig("_configFoot", "modal-footer"))
+                            .append(modalConfig._foot)))));
+    }, alert = function (text) {
+        if (_alertModal !== null)
+            _alertModal.getElementsByTagName("label")[0].innerHTML = text;
+        else
+            _alertModal = create(_alertName, {
+                _configContent: { style: { width: "50%", margin: "0px auto 0px auto" } },
+                _configHead: { style: { border: "none" } },
+                _configFoot: { style: { border: "none", marginTop: "0px" } },
+                _body: document.createElement("LABEL").config({ innerHTML: text }),
+                _foot: document.createElement('BUTTON').config({
+                    Fclick: () => toggle(_alertName, false),
+                    innerHTML: "OK", className: "btn btn-default"
+                })
+            });
+
+        toggle(_alertName, true);
+        return _alertModal;
+    }, confirm = function (text, func, footConfig) {
+        footConfig = footConfig || {};
+        if (_confirmModal !== null) {
+            _confirmModal.getElementsByTagName("button")[0].removeEventListener("click", _okClick);
+            _confirmModal.getElementsByTagName("button")[1].removeEventListener("click", _cancelClick);
+        } else
+            _confirmModal = create(_confirmName, {
+                _XBtn: false,
+                _configHead: { Sdisplay: "none" },
+                _body: document.createElement("label"),
+                _foot: document.createElement('DIV')
+                  .append(document.createElement('BUTTON').config(footConfig._okButton || {
+                      innerHTML: "OK", className: "btn btn-default"
+                  }))
+                  .append(document.createElement('BUTTON').config(footConfig._cancelButton || {
+                      innerHTML: "Cancela", className: "btn btn-default"
+                  }))
+            });
+
+        _confirmModal.getElementsByTagName("label")[0].innerHTML = text;
+        _okClick = function () { toggle(_confirmName, false); func(true); };
+        _confirmModal.getElementsByTagName("button")[0].addEventListener("click", _okClick);
+        _cancelClick = function () { toggle(_confirmName, false); func(false); };
+        _confirmModal.getElementsByTagName("button")[1].addEventListener("click", _cancelClick);
+
+        toggle(_confirmName, true, { _clickOut: false });
+        return _confirmModal;
+    }, prompt = function (text, func) {
+        if (_promptModal !== null)
+            _promptModal.getElementsByTagName("button")[0].removeEventListener("click", _promptFunc);
+        else
+            _promptModal = create(_promptName, {
+                _foot: false, _XBtn: false, _head: false,
+                _configHead: { style: { display: "none" } },
+                _configBody: { style: { paddingTop: "none" } },
+                _body: document.createElement('DIV')
+                  .append(document.createElement("label")).append(document.createElement("BR"))
+                  .append(document.createElement('DIV').config({ className: "input-group" })
+                    .append(document.createElement("INPUT").config({ type: "text", className: "form-control", SmaxWidth: "none" }))
+                    .append(document.createElement("SPAN").config({ className: "input-group-btn" })
+                      .append(document.createElement("BUTTON").config({
+                          className: "btn btn-defaul", type: "button", innerHTML: "OK", Sborder: "none"
+                      }))
+                    )),
+                _configFoot: { style: { display: "none" } }
+            });
+
+        _promptModal.getElementsByTagName("label")[0].innerHTML = text;
+        _promptModal.getElementsByTagName("input")[0].value = "";
+        _promptFunc = function () {
+            toggle(_promptName, false);
+            func(_promptModal.getElementsByTagName("input")[0].value);
+        };
+        _promptModal.getElementsByTagName("button")[0].addEventListener("click", _promptFunc);
+        toggle(_promptName, true, { _clickOut: false });
+        return _promptModal;
+    }, toggle = function (id, content, modalConfig) {
+        var element = document.getElementById(id);
+        if (!document.body.hasClass("modal-open")) { //if para verificar data-toggle
+            modalConfig = modalConfig || {};
+            if (!element) return;
+            show(element[(content ? "add" : "remove") + "Class"]("in"), content, modalConfig._delay || _modalDelay);
+            if (modalConfig._clickOut !== false) {
+                if (content) _clickOut = modalConfig._clickOut;
+                document.body[(content ? "add" : "remove") + "EventListener"]('click', _clickOutsideModal);
+            }
+            document.body[(content ? "append" : "remove") + "Child"](_divBackdrop);
+        } else document.body.removeClass("modal-open");
+        if (!content && element.onHideModal) element.onHideModal();
+    }
+
+    return {create: create, alert: alert, confirm: confirm, prompt: prompt, toggle: toggle};
+})();
 
 
 //TITLE PERSONALIZADO
-var XTitle = {
-    _presets: {
-        _titleName: "personalizeTitle",
-        _titleEl: null,
-        _titleDelay: 20,
-        _titleStyle: {
-            padding: "3px",
-            border: "1px solid #666",
-            "border-right-width": "2px",
-            "border-bottom-width": "2px",
-            background: "#003459",
-            color: "#FFF",
-            font: "bold 9px Verdana, Arial, Helvetica, sans-serif",
-            "text-align": "left",
-            position: "absolute",
-            "z-index": 1000
-        }
+var XTitle = (function() {
+    var _titleName = "personalizeTitle",
+    _titleEl = null,
+    _titleDelay = 20,
+    _titleStyle = {
+        padding: "3px",
+        border: "1px solid #666",
+        "border-right-width": "2px",
+        "border-bottom-width": "2px",
+        background: "#003459",
+        color: "#FFF",
+        font: "bold 9px Verdana, Arial, Helvetica, sans-serif",
+        "text-align": "left",
+        position: "absolute",
+        "z-index": 1000
+    }, showTitle = function (text) {
+        text ? show(_titleEl, true, _titleDelay) : show(_titleEl, false);
+        _titleEl.config({ innerHTML: text || "" });
+    }, iniciaTitle = function (titleConfig) {
+        titleConfig = titleConfig || {};
+        if (titleConfig._style) Object.keys(titleConfig._style).forEach(att => _titleStyle[att] = titleConfig._style[att]);
+
+        _titleDelay = titleConfig._delay || _titleDelay;
+        _titleName = titleConfig._name || _titleName;
+        _titleEl = document.getElementById(_titleName) ||
+            document.body.appendChild(document.createElement("div").config({
+                id: _titleName, style: _titleStyle
+            }));
+
+        var getPlace = evt => _titleEl.config({
+            style: { left: (evt.pageX + 12) + "px", top: (evt.pageY + 20) + "px" }
+        });
+        document.onmousemove = getPlace;
+        document.addEventListener(getBrowser() !== "firefox" ? "mousewheel" : "DOMMouseScroll", getPlace, false);
+        refreshTitle();
+    }, refreshTitle = function () {
+        show(_titleEl, false);
+        getElement("+title").forEach(function (el) {
+            el.setAttribute(_titleName, el.title);
+            el.removeAttribute("title");
+            el.onmouseover = function () { showTitle(el.getAttribute(_titleName)) };
+            el.onmouseout = function () { showTitle() };
+        });
+
+        var parent;
+        document.getElementsByTagName("title").toArray().forEach(function (el) {
+            parent = el.parentElement;
+            if (parent.tagName !== "HEAD") {
+                parent.setAttribute(_presets._titleName, el.innerHTML);
+                el.remove();
+                parent.onmouseover = function () {
+                    showTitle(parent.getAttribute(_titleName))
+                };
+                parent.onmouseout = function () { showTitle() };
+            }
+        });
     }
-};
-XTitle.iniciaTitle = function (titleConfig) {
-    titleConfig = titleConfig || {};
-    if (titleConfig._style) Object.keys(titleConfig._style).forEach(att => XTitle._presets._titleStyle[att] = titleConfig._style[att]);
 
-    XTitle._presets._titleDelay = titleConfig._delay || XTitle._presets._titleDelay;
-    XTitle._presets._titleName = titleConfig._name || XTitle._presets._titleName;
-    XTitle._presets._titleEl = document.getElementById(XTitle._presets._titleName) ||
-        document.body.appendChild(document.createElement("div").config({
-            id: XTitle._presets._titleName, style: XTitle._presets._titleStyle
-        }));
-
-    var getPlace = evt => XTitle._presets._titleEl.config({
-        style: { left: (evt.pageX + 12) + "px", top: (evt.pageY + 20) + "px" }
-    });
-    document.onmousemove = getPlace;
-    document.addEventListener(getBrowser() !== "firefox" ? "mousewheel" : "DOMMouseScroll", getPlace, false);
-    XTitle.refreshTitle();
-};
-XTitle.refreshTitle = function () {
-    show(XTitle._presets._titleEl, false);
-    getElement("+title").forEach(function (el) {
-        el.setAttribute(XTitle._presets._titleName, el.title);
-        el.removeAttribute("title");
-        el.onmouseover = function () { XTitle.showTitle(el.getAttribute(XTitle._presets._titleName)) };
-        el.onmouseout = function () { XTitle.showTitle() };
-    });
-
-    var parent;
-    document.getElementsByTagName("title").toArray().forEach(function (el) {
-        parent = el.parentElement;
-        if (parent.tagName !== "HEAD") {
-            parent.setAttribute(XTitle._presets._titleName, el.innerHTML);
-            el.remove();
-            parent.onmouseover = function () {
-                XTitle.showTitle(parent.getAttribute(XTitle._presets._titleName))
-            };
-            parent.onmouseout = function () { XTitle.showTitle() };
-        }
-    });
-};
-XTitle.showTitle = function (text) {
-    text ? show(XTitle._presets._titleEl, true, XTitle._presets._titleDelay) : show(XTitle._presets._titleEl, false);
-    XTitle._presets._titleEl.config({ innerHTML: text || "" });
-};
+    return { iniciaTitle: iniciaTitle, refreshTitle: refreshTitle };
+})();
