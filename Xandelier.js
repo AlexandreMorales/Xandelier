@@ -3,7 +3,7 @@
 
 /*
 Parametros:
-    obAjax: Objeto com as configurações do ajax:
+    obAjax: (Objeto) Objeto com as configurações do ajax:
         _path: (String) URL do ajax
                 (pode estar pré-setado a váriavel window.rootUrl que diz aonde a aplicação se encontra);
         _type: (String) Tipo de requisição em caixa alta(POST, GET, PUT, DELETE);
@@ -133,14 +133,14 @@ Retorno: (Array) Array embaralhado;
 function shuffle(array) {
     var currentIndex = array.length, temporaryValue, randomIndex;
 
-    // Enquanto ainda estiver elementos para ordenar...
+    //Enquanto ainda estiver elementos para ordenar
     while (0 !== currentIndex) {
 
-        // Pegue um elemento faltando...
+        //Pegue um elemento faltando
         randomIndex = Math.floor(Math.random() * currentIndex);
         currentIndex--;
 
-        // E troca pelo elemento atual.
+        //Troca pelo elemento atual
         temporaryValue = array[currentIndex];
         array[currentIndex] = array[randomIndex];
         array[randomIndex] = temporaryValue;
@@ -237,10 +237,25 @@ function getBrowser() {
         return "ie";
 };
 
+/*
+Parametros:
+    object: (Objeto) Objeto onde irá ser adicionado o atributo novo;
+    name:   (String) Nome do atributo novo;
+    value:  Valor do atributo novo;
+Retorno: (Objeto) Objeto onde foi adicionado atributo novo;
+*/
+//Adiciona atributo no objeto
 function addObjectAttribute(object, name, value) {
     object[name] = value;
     return object;
 };
+/*
+Parametros:
+    object: (Objeto) Objeto onde irá ser removido o atributo;
+    name:   (String) Nome do atributo à ser removido;
+Retorno: (Objeto) Objeto onde foi removido o atributo;
+*/
+//Remove atributo do objeto
 function removeObjectAttribute(object, name) {
     delete object[name];
     return object;
@@ -447,27 +462,27 @@ Element.prototype.getElement = function (selector) {
 };
 
 //Pega os elementos de acordo com o seletor enviado
-var getElement = (function(){
+var getElement = (function () {
     var elementInicial = null;
-    return function(selector, element, config) {
+    return function (selector, element, config) {
         try {
-            console.log(selector);
+            //console.log(selector);
             if (!selector.length) return element;
             config = config || {};
             elementInicial = elementInicial || (element = element || document);
-            var auxFunc = null, auxFilter = null, operatorAux = "", funcGetAtt = "",
+            var auxFunc = null, auxFilter = null, operatorAux = "", funcGetAtt = "", isArray = (getType(element) === "array"),
                 selectors = (getType(selector) === "array") ? selector :
                             selector.replace(/#/g, ",#").replace(/\./g, ",.").replace(/:/g, ",:").replace(/\+/g, ",+").replace(/\+\,\+/g, ",++")
                                     .replace(/\&\&/g, ",&&,").replace(/\*/g, ",*,").replace(/\|\|/g, ",||,").replace(/\!/g, ",!,")
                                     .split(",").filter(s => s), item = selectors.shift();
             switch (item) {
                 case '*': return getElement(selectors, element.getElementsByTagName("*").toArray());
-                case '||': return element || getElement(selectors, elementInicial);
+                case '||': return (isArray ? element.length : element) || getElement(selectors, elementInicial);
                 case '&&': return getElement(selectors, element, { _include: true });
                 case '!': config._not = true; return getElement(selectors, element, config);
             };
             switch (item[0]) {
-                case '#': return (element === document) ? getElement(selectors, element.getElementById(item.substr(1))) : undefined;
+                case '#': return getElement(selectors, document.getElementById(item.substr(1)));
                 case '+':
                     item = item.substr(1);
                     funcGetAtt = (item[0] === '+') ? (item = item.substr(1), "getDOMAttribute") : "getAttribute";
@@ -484,9 +499,7 @@ var getElement = (function(){
                         case ">=": auxFilter = el => ((parseFloat(el[funcGetAtt](item[0])) >= parseFloat(item[2])) ^ config._not); break;
                         case undefined: default: auxFilter = el => ((!!el[funcGetAtt](item[0])) ^ config._not); break;
                     }
-                    if (element === document)
-                        element = element.getElementsByTagName("*").toArray();
-                    auxFunc = el => el.children.toArray().filter(auxFilter);
+                    auxFunc = el => el.getElementsByTagName("*").toArray().filter(auxFilter);
                     break;
                 case '.':
                     item = item.substr(1);
@@ -500,18 +513,20 @@ var getElement = (function(){
                     break;
                 default:
                     auxFilter = el => ((el.name === item) ^ config._not);
-                    auxFunc = el => (element === document) ? el.getElementsByName(item).toArray() : false;
+                    auxFunc = el => (element === document) ? document.getElementsByName(item).toArray() :
+                                    (isArray ? el.reduce((aux, e) => aux.concat(getElement("+name=" + item, e)), []) : getElement("+name=" + item, el));
                     break;
             };
 
             return getElement(selectors, config._include ?
-                            (getType(element) === "array") ? element.filter(auxFilter) : [element].filter(auxFilter)[0] :
-                            (getType(element) === "array") ? element.reduce((aux, el) => aux.concat(auxFunc(el)), []) : auxFunc(element));
+                            (isArray ? element.filter(auxFilter) : [element].filter(auxFilter)[0]) :
+                            (isArray ? element.reduce((aux, el) => aux.concat(auxFunc(el)), []) : auxFunc(element)));
         } finally {
             elementInicial = null;
         }
     };
-})()
+})();
+
 /*
 Parametros:
     element: (String OU HtmlElement) String com o id do elemento OU Elemento a ser mostrado ou escondido;
@@ -520,10 +535,10 @@ Parametros:
     delay:   (Number) Tempo em ms para mostrar ou esconder o Elemento;
 */
 //Mostra ou esconde elementos
-var show = (function() {
+var show = (function () {
     var valueShowBool = false,
-    sameElement = {}
-    return function(element, value, delay) {
+        sameElement = {};
+    return function (element, value, delay) {
         valueShowBool = value;
         element = (getType(element) === "string") ?
                     document.getElementById(element) : element;
@@ -593,214 +608,212 @@ function getLayout(path, conatiner, fDone) {
 };
 
 //MODALS
-var XModal = (function(){
+var XModal = (function () {
     var _modalDelay = 5,
-    _modalConfigAx = null,
-    _clickOut = null,
-    _alertName = "alertXModal",
-    _confirmName = "confirmXModal",
-    _promptName = "promptXModal",
-    _divNone = document.createElement("DIV").config({ Sdisplay: "none" }),
-    _divBackdrop = document.createElement("DIV").addClass("modal-backdrop fade in"),
-    _configConfig = function (att, value) {
-        if (_modalConfigAx[att] === undefined)
-            return { className: value }
-        if (_modalConfigAx[att] === false)
-            return {};
-        _modalConfigAx[att].className = (_modalConfigAx[att].className) ?
-            value + " " + _modalConfigAx[att].className : value;
-        return _modalConfigAx[att];
-    },
-    _clickOutsideModal = function (e) {
-        if (e.target.hasClass("modal fade in")) {
-            toggle(e.target.id, false);
-            if (_clickOut) _clickOut();
-        }
-    },
-    _okClick = null, _cancelClick = null, _promptFunc = null,
-    _confirmModal = null, _promptModal = null, _alertModal = null,
-    create = function (id, modalConfig) {
-        var closeModal = () => toggle(id, false);
-
-        modalConfig = modalConfig || {};
-        modalConfig._XBtn = modalConfig._XBtn === undefined ? "x" : modalConfig._XBtn;
-        modalConfig._XBtn = modalConfig._XBtn === false ? _divNone :
-            document.createElement('BUTTON').config({
-                className: "close", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: modalConfig._XBtn
-            });
-
-        modalConfig._head = modalConfig._head || _divNone;
-        modalConfig._body = modalConfig._body || _divNone;
-
-        modalConfig._foot = modalConfig._foot === undefined ?
-            document.createElement('BUTTON').config({
-                className: "btn btn-default", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "Fechar"
-            }) : modalConfig._foot || _divNone;
-
-        _modalConfigAx = modalConfig;
-
-        return document.body
-            .appendChild(document.createElement('DIV').config({ id: id, className: "modal fade" })
-                .append(document.createElement('DIV').config(_configConfig("_configDialog", "modal-dialog"))
-                    .append(document.createElement('DIV').config(_configConfig("_configContent", "modal-content"))
-                        .append(document.createElement('DIV').config(_configConfig("_configHead", "modal-header"))
-                            .append(modalConfig._XBtn)
-                            .append(document.createElement('H4').config(_configConfig("_configTitle", "modal-title")))
-                            .append(modalConfig._head))
-                        .append(document.createElement('DIV').config(_configConfig("_configBody", "modal-body"))
-                            .append(modalConfig._body))
-                        .append(document.createElement('DIV').config(_configConfig("_configFoot", "modal-footer"))
-                            .append(modalConfig._foot)))));
-    }, alert = function (text) {
-        if (_alertModal !== null)
-            _alertModal.getElementsByTagName("label")[0].innerHTML = text;
-        else
-            _alertModal = create(_alertName, {
-                _configContent: { style: { width: "50%", margin: "0px auto 0px auto" } },
-                _configHead: { style: { border: "none" } },
-                _configFoot: { style: { border: "none", marginTop: "0px" } },
-                _body: document.createElement("LABEL").config({ innerHTML: text }),
-                _foot: document.createElement('BUTTON').config({
-                    Fclick: () => toggle(_alertName, false),
-                    innerHTML: "OK", className: "btn btn-default"
-                })
-            });
-
-        toggle(_alertName, true);
-        return _alertModal;
-    }, confirm = function (text, func, footConfig) {
-        footConfig = footConfig || {};
-        if (_confirmModal !== null) {
-            _confirmModal.getElementsByTagName("button")[0].removeEventListener("click", _okClick);
-            _confirmModal.getElementsByTagName("button")[1].removeEventListener("click", _cancelClick);
-        } else
-            _confirmModal = create(_confirmName, {
-                _XBtn: false,
-                _configHead: { Sdisplay: "none" },
-                _body: document.createElement("label"),
-                _foot: document.createElement('DIV')
-                  .append(document.createElement('BUTTON').config(footConfig._okButton || {
-                      innerHTML: "OK", className: "btn btn-default"
-                  }))
-                  .append(document.createElement('BUTTON').config(footConfig._cancelButton || {
-                      innerHTML: "Cancela", className: "btn btn-default"
-                  }))
-            });
-
-        _confirmModal.getElementsByTagName("label")[0].innerHTML = text;
-        _okClick = function () { toggle(_confirmName, false); func(true); };
-        _confirmModal.getElementsByTagName("button")[0].addEventListener("click", _okClick);
-        _cancelClick = function () { toggle(_confirmName, false); func(false); };
-        _confirmModal.getElementsByTagName("button")[1].addEventListener("click", _cancelClick);
-
-        toggle(_confirmName, true, { _clickOut: false });
-        return _confirmModal;
-    }, prompt = function (text, func) {
-        if (_promptModal !== null)
-            _promptModal.getElementsByTagName("button")[0].removeEventListener("click", _promptFunc);
-        else
-            _promptModal = create(_promptName, {
-                _foot: false, _XBtn: false, _head: false,
-                _configHead: { style: { display: "none" } },
-                _configBody: { style: { paddingTop: "none" } },
-                _body: document.createElement('DIV')
-                  .append(document.createElement("label")).append(document.createElement("BR"))
-                  .append(document.createElement('DIV').config({ className: "input-group" })
-                    .append(document.createElement("INPUT").config({ type: "text", className: "form-control", SmaxWidth: "none" }))
-                    .append(document.createElement("SPAN").config({ className: "input-group-btn" })
-                      .append(document.createElement("BUTTON").config({
-                          className: "btn btn-defaul", type: "button", innerHTML: "OK", Sborder: "none"
-                      }))
-                    )),
-                _configFoot: { style: { display: "none" } }
-            });
-
-        _promptModal.getElementsByTagName("label")[0].innerHTML = text;
-        _promptModal.getElementsByTagName("input")[0].value = "";
-        _promptFunc = function () {
-            toggle(_promptName, false);
-            func(_promptModal.getElementsByTagName("input")[0].value);
-        };
-        _promptModal.getElementsByTagName("button")[0].addEventListener("click", _promptFunc);
-        toggle(_promptName, true, { _clickOut: false });
-        return _promptModal;
-    }, toggle = function (id, content, modalConfig) {
-        var element = document.getElementById(id);
-        if (!document.body.hasClass("modal-open")) { //if para verificar data-toggle
-            modalConfig = modalConfig || {};
-            if (!element) return;
-            show(element[(content ? "add" : "remove") + "Class"]("in"), content, modalConfig._delay || _modalDelay);
-            if (modalConfig._clickOut !== false) {
-                if (content) _clickOut = modalConfig._clickOut;
-                document.body[(content ? "add" : "remove") + "EventListener"]('click', _clickOutsideModal);
+        _modalConfigAx = null,
+        _clickOut = null,
+        _alertName = "alertXModal",
+        _confirmName = "confirmXModal",
+        _promptName = "promptXModal",
+        _divNone = document.createElement("DIV").config({ Sdisplay: "none" }),
+        _divBackdrop = document.createElement("DIV").addClass("modal-backdrop fade in"),
+        _configConfig = function (att, value) {
+            if (_modalConfigAx[att] === undefined)
+                return { className: value }
+            if (_modalConfigAx[att] === false)
+                return {};
+            _modalConfigAx[att].className = (_modalConfigAx[att].className) ?
+                value + " " + _modalConfigAx[att].className : value;
+            return _modalConfigAx[att];
+        },
+        _clickOutsideModal = function (e) {
+            if (e.target.hasClass("modal fade in")) {
+                toggle(e.target.id, false);
+                if (_clickOut) _clickOut();
             }
-            document.body[(content ? "append" : "remove") + "Child"](_divBackdrop);
-        } else document.body.removeClass("modal-open");
-        if (!content && element.onHideModal) element.onHideModal();
-    }
+        },
+        _okClick = null, _cancelClick = null, _promptFunc = null,
+        _confirmModal = null, _promptModal = null, _alertModal = null,
+        create = function (id, modalConfig) {
+            var closeModal = () => toggle(id, false);
 
-    return {create: create, alert: alert, confirm: confirm, prompt: prompt, toggle: toggle};
+            modalConfig = modalConfig || {};
+            modalConfig._XBtn = modalConfig._XBtn === undefined ? "x" : modalConfig._XBtn;
+            modalConfig._XBtn = modalConfig._XBtn === false ? _divNone :
+                document.createElement('BUTTON').config({
+                    className: "close", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: modalConfig._XBtn
+                });
+
+            modalConfig._head = modalConfig._head || _divNone;
+            modalConfig._body = modalConfig._body || _divNone;
+
+            modalConfig._foot = modalConfig._foot === undefined ?
+                document.createElement('BUTTON').config({
+                    className: "btn btn-default", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "Fechar"
+                }) : modalConfig._foot || _divNone;
+
+            _modalConfigAx = modalConfig;
+
+            return document.body
+                .appendChild(document.createElement('DIV').config({ id: id, className: "modal fade" })
+                    .append(document.createElement('DIV').config(_configConfig("_configDialog", "modal-dialog"))
+                        .append(document.createElement('DIV').config(_configConfig("_configContent", "modal-content"))
+                            .append(document.createElement('DIV').config(_configConfig("_configHead", "modal-header"))
+                                .append(modalConfig._XBtn)
+                                .append(document.createElement('H4').config(_configConfig("_configTitle", "modal-title")))
+                                .append(modalConfig._head))
+                            .append(document.createElement('DIV').config(_configConfig("_configBody", "modal-body"))
+                                .append(modalConfig._body))
+                            .append(document.createElement('DIV').config(_configConfig("_configFoot", "modal-footer"))
+                                .append(modalConfig._foot)))));
+        }, alert = function (text) {
+            if (_alertModal !== null)
+                _alertModal.getElementsByTagName("label")[0].innerHTML = text;
+            else
+                _alertModal = create(_alertName, {
+                    _configContent: { style: { width: "50%", margin: "0px auto 0px auto" } },
+                    _configHead: { style: { border: "none" } },
+                    _configFoot: { style: { border: "none", marginTop: "0px" } },
+                    _body: document.createElement("LABEL").config({ innerHTML: text }),
+                    _foot: document.createElement('BUTTON').config({
+                        Fclick: () => toggle(_alertName, false),
+                        innerHTML: "OK", className: "btn btn-default"
+                    })
+                });
+
+            toggle(_alertName, true);
+            return _alertModal;
+        }, confirm = function (text, func, footConfig) {
+            footConfig = footConfig || {};
+            if (_confirmModal !== null) {
+                _confirmModal.getElementsByTagName("button")[0].removeEventListener("click", _okClick);
+                _confirmModal.getElementsByTagName("button")[1].removeEventListener("click", _cancelClick);
+            } else
+                _confirmModal = create(_confirmName, {
+                    _XBtn: false,
+                    _configHead: { Sdisplay: "none" },
+                    _body: document.createElement("label"),
+                    _foot: document.createElement('DIV')
+                      .append(document.createElement('BUTTON').config(footConfig._okButton || {
+                          innerHTML: "OK", className: "btn btn-default"
+                      }))
+                      .append(document.createElement('BUTTON').config(footConfig._cancelButton || {
+                          innerHTML: "Cancela", className: "btn btn-default"
+                      }))
+                });
+
+            _confirmModal.getElementsByTagName("label")[0].innerHTML = text;
+            _okClick = function () { toggle(_confirmName, false); func(true); };
+            _confirmModal.getElementsByTagName("button")[0].addEventListener("click", _okClick);
+            _cancelClick = function () { toggle(_confirmName, false); func(false); };
+            _confirmModal.getElementsByTagName("button")[1].addEventListener("click", _cancelClick);
+
+            toggle(_confirmName, true, { _clickOut: false });
+            return _confirmModal;
+        }, prompt = function (text, func) {
+            if (_promptModal !== null)
+                _promptModal.getElementsByTagName("button")[0].removeEventListener("click", _promptFunc);
+            else
+                _promptModal = create(_promptName, {
+                    _foot: false, _XBtn: false, _head: false,
+                    _configHead: { style: { display: "none" } },
+                    _configBody: { style: { paddingTop: "none" } },
+                    _body: document.createElement('DIV')
+                      .append(document.createElement("label")).append(document.createElement("BR"))
+                      .append(document.createElement('DIV').config({ className: "input-group" })
+                        .append(document.createElement("INPUT").config({ type: "text", className: "form-control", SmaxWidth: "none" }))
+                        .append(document.createElement("SPAN").config({ className: "input-group-btn" })
+                          .append(document.createElement("BUTTON").config({
+                              className: "btn btn-defaul", type: "button", innerHTML: "OK", Sborder: "none"
+                          }))
+                        )),
+                    _configFoot: { style: { display: "none" } }
+                });
+
+            _promptModal.getElementsByTagName("label")[0].innerHTML = text;
+            _promptModal.getElementsByTagName("input")[0].value = "";
+            _promptFunc = function () {
+                toggle(_promptName, false);
+                func(_promptModal.getElementsByTagName("input")[0].value);
+            };
+            _promptModal.getElementsByTagName("button")[0].addEventListener("click", _promptFunc);
+            toggle(_promptName, true, { _clickOut: false });
+            return _promptModal;
+        }, toggle = function (id, content, modalConfig) {
+            var element = document.getElementById(id);
+            if (!document.body.hasClass("modal-open")) { //if para verificar data-toggle
+                modalConfig = modalConfig || {};
+                if (!element) return;
+                show(element[(content ? "add" : "remove") + "Class"]("in"), content, modalConfig._delay || _modalDelay);
+                if (modalConfig._clickOut !== false) {
+                    if (content) _clickOut = modalConfig._clickOut;
+                    document.body[(content ? "add" : "remove") + "EventListener"]('click', _clickOutsideModal);
+                }
+                document.body[(content ? "append" : "remove") + "Child"](_divBackdrop);
+            } else document.body.removeClass("modal-open");
+            if (!content && element.onHideModal) element.onHideModal();
+        }
+
+    return { create: create, alert: alert, confirm: confirm, prompt: prompt, toggle: toggle };
 })();
 
 
 //TITLE PERSONALIZADO
-var XTitle = (function() {
+var XTitle = (function () {
     var _titleName = "personalizeTitle",
-    _titleEl = null,
-    _titleDelay = 20,
-    _titleStyle = {
-        padding: "3px",
-        border: "1px solid #666",
-        "border-right-width": "2px",
-        "border-bottom-width": "2px",
-        background: "#003459",
-        color: "#FFF",
-        font: "bold 9px Verdana, Arial, Helvetica, sans-serif",
-        "text-align": "left",
-        position: "absolute",
-        "z-index": 1000
-    }, showTitle = function (text) {
-        text ? show(_titleEl, true, _titleDelay) : show(_titleEl, false);
-        _titleEl.config({ innerHTML: text || "" });
-    }, iniciaTitle = function (titleConfig) {
-        titleConfig = titleConfig || {};
-        if (titleConfig._style) Object.keys(titleConfig._style).forEach(att => _titleStyle[att] = titleConfig._style[att]);
+        _titleEl = null,
+        _titleDelay = 20,
+        _titleStyle = {
+            padding: "3px",
+            border: "1px solid #666",
+            "border-right-width": "2px",
+            "border-bottom-width": "2px",
+            background: "#003459",
+            color: "#FFF",
+            font: "bold 9px Verdana, Arial, Helvetica, sans-serif",
+            "text-align": "left",
+            position: "absolute",
+            "z-index": 1000
+        }, showTitle = function (text) {
+            text ? show(_titleEl, true, _titleDelay) : show(_titleEl, false);
+            _titleEl.config({ innerHTML: text || "" });
+        }, iniciaTitle = function (titleConfig) {
+            titleConfig = titleConfig || {};
+            if (titleConfig._style) Object.keys(titleConfig._style).forEach(att => _titleStyle[att] = titleConfig._style[att]);
 
-        _titleDelay = titleConfig._delay || _titleDelay;
-        _titleName = titleConfig._name || _titleName;
-        _titleEl = document.getElementById(_titleName) ||
-            document.body.appendChild(document.createElement("div").config({
-                id: _titleName, style: _titleStyle
-            }));
+            _titleDelay = titleConfig._delay || _titleDelay;
+            _titleName = titleConfig._name || _titleName;
+            _titleEl = document.getElementById(_titleName) ||
+                document.body.appendChild(document.createElement("div").config({
+                    id: _titleName, style: _titleStyle
+                }));
 
-        var getPlace = evt => _titleEl.config({
-            style: { left: (evt.pageX + 12) + "px", top: (evt.pageY + 20) + "px" }
-        });
-        document.onmousemove = getPlace;
-        document.addEventListener(getBrowser() !== "firefox" ? "mousewheel" : "DOMMouseScroll", getPlace, false);
-        refreshTitle();
-    }, refreshTitle = function () {
-        show(_titleEl, false);
-        getElement("+title").forEach(function (el) {
-            el.setAttribute(_titleName, el.title);
-            el.removeAttribute("title");
-            el.onmouseover = function () { showTitle(el.getAttribute(_titleName)) };
-            el.onmouseout = function () { showTitle() };
-        });
+            var getPlace = evt => _titleEl.config({
+                style: { left: (evt.pageX + 12) + "px", top: (evt.pageY + 20) + "px" }
+            });
+            document.onmousemove = getPlace;
+            document.addEventListener(getBrowser() !== "firefox" ? "mousewheel" : "DOMMouseScroll", getPlace, false);
+            refreshTitle();
+        }, refreshTitle = function () {
+            show(_titleEl, false);
+            getElement("+title").forEach(function (el) {
+                el.setAttribute(_titleName, el.title);
+                el.removeAttribute("title");
+                el.onmouseover = function () { showTitle(el.getAttribute(_titleName)); };
+                el.onmouseout = function () { showTitle(); };
+            });
 
-        var parent;
-        document.getElementsByTagName("title").toArray().forEach(function (el) {
-            parent = el.parentElement;
-            if (parent.tagName !== "HEAD") {
-                parent.setAttribute(_presets._titleName, el.innerHTML);
-                el.remove();
-                parent.onmouseover = function () {
-                    showTitle(parent.getAttribute(_titleName))
-                };
-                parent.onmouseout = function () { showTitle() };
-            }
-        });
-    }
+            var parent;
+            document.getElementsByTagName("title").toArray().forEach(function (el) {
+                parent = el.parentNode;
+                if (parent.tagName !== "HEAD") {
+                    parent.setAttribute(_presets._titleName, el.innerHTML);
+                    el.remove();
+                    parent.onmouseover = function () { showTitle(parent.getAttribute(_titleName)); };
+                    parent.onmouseout = function () { showTitle(); };
+                }
+            });
+        }
 
-    return { iniciaTitle: iniciaTitle, refreshTitle: refreshTitle };
+        return { iniciaTitle: iniciaTitle, refreshTitle: refreshTitle };
 })();
