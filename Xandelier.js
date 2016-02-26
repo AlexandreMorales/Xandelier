@@ -372,7 +372,8 @@ var removeDiacritics = (str) => str.replace(/[^\u0000-\u007E]/g, a => diacritics
 
 function testFast(func, param) {
     var start = performance.now();  // log start timestamp
-    func(param);
+    for (var i = 0; i < 1000; i++)
+        func(param);
     return performance.now() - start;  // log end timestamp
 }
 
@@ -384,9 +385,18 @@ function testFast(func, param) {
 Retorno: (Array) A própria coleção mas em array;
 */
 //Transforma a coleção de elementos em um array de elementos
-HTMLCollection.prototype.toArray = function () { return [].slice.call(this); };
-NodeList.prototype.toArray = function () { return [].slice.call(this); };
-
+HTMLCollection.prototype.toArray = function () {
+    var arr = [];
+    for (var i = 0; i < this.length; i++)
+        arr.push(this[i]);
+    return arr;
+};
+NodeList.prototype.toArray = function () {
+    var arr = [];
+    for (var i = 0; i < this.length; i++)
+        arr.push(this[i]);
+    return arr;
+};
 /*
 Parametros:
     className: (String) Classe a ser verificada;
@@ -469,63 +479,76 @@ Element.prototype.getElement = function (selector) {
 
 //Pega os elementos de acordo com o seletor enviado
 var getElement = (function () {
-    var elementInicial = null;
-    return function (selector, element, config) {
-        try {
-            //console.log(selector);
-            if (!selector.length) return element;
-            config = config || {};
-            elementInicial = elementInicial || (element = element || document);
-            var funcExec = null, funcFilter = null, operatorAux = "", funcGetAtt = "", isArray = (getType(element) === "array"),
-                selectors = (typeof selector === "string") ? 
-                                    selector.match(/([\w\s-<>=]+)|\#|\.|\:|\+|\&\&|\|\||\!|\*/g) : 
-                                    selector, item = selectors.shift();
-
-            switch (item) {
-                case '*': return getElement(selectors, element.getElementsByTagName("*").toArray());
-                case '||': return (isArray ? (element.length ? element : false) : element) || 
-                                                getElement(selectors, elementInicial);
-                case '&&': return getElement(selectors, element, { _include: true });
-                case '!': config._not = true; return getElement(selectors, element, config);
-                case '#': return getElement(selectors, document.getElementById(selectors.shift()));
-                case '+':
+    var elementInicial = null,
+        getElement = function (selector, element, config) {
+            try {
+                //console.log(selector);
+                config = config || {};
+                elementInicial = elementInicial || (element = element || document);
+                if (!selector.length || !element) return element;
+                var funcExec = null, funcFilter = null, 
+                    isArray = (getType(element) === "array"),
+                    selectors = (typeof selector === "string") ?
+                                        selector.match(/([\w\s-<>=]+)|\#|\.|\:|\+|\&\&|\|\||\!|\*/g) : selector,
                     item = selectors.shift();
-                    funcGetAtt = (item === '+') ? (item = selectors.shift(), "getDOMAttribute") : "getAttribute";
-                    item = item.match(/([\w\s-\']+)|([<>=]+)/g);
-                    switch (item[1]) {
-                        case "=": funcFilter = el => ((el[funcGetAtt](item[0]) == item[2]) ^ config._not); break;
-                        case "<": funcFilter = el => ((parseFloat(el[funcGetAtt](item[0])) < parseFloat(item[2])) ^ config._not); break;
-                        case ">": funcFilter = el => ((parseFloat(el[funcGetAtt](item[0])) > parseFloat(item[2])) ^ config._not); break;
-                        case "<=": funcFilter = el => ((parseFloat(el[funcGetAtt](item[0])) <= parseFloat(item[2])) ^ config._not); break;
-                        case ">=": funcFilter = el => ((parseFloat(el[funcGetAtt](item[0])) >= parseFloat(item[2])) ^ config._not); break;
-                        default: funcFilter = el => ((!!el[funcGetAtt](item[0])) ^ config._not); break;
-                    }
-                    funcExec = el => el.getElementsByTagName("*").toArray().filter(funcFilter);
-                    break;
-                case '.':
-                    item = selectors.shift();
-                    funcFilter = el => (el.className.split(" ").contains(item.split(" ")) ^ config._not);
-                    funcExec = el => el.getElementsByClassName(item).toArray();
-                    break;
-                case ':':
-                    item = selectors.shift().toLowerCase();
-                    funcFilter = el => ((el.tagName.toLowerCase() === item) ^ config._not);
-                    funcExec = el => el.getElementsByTagName(item).toArray();
-                    break;
-                default:
-                    funcFilter = el => ((el.name === item) ^ config._not);
-                    funcExec = el => (element === document) ? element.getElementsByName(item).toArray() :
-                                    (isArray ? el.reduce((array, e) => array.concat(getElement("+name=" + item, e)), []) : getElement("+name=" + item, el));
-                    break;
-            };
 
-            return getElement(selectors, config._include ?
-                            (isArray ? element.filter(funcFilter) : [element].filter(funcFilter)[0]) :
-                            (isArray ? element.reduce((array, el) => array.concat(funcExec(el)), []) : funcExec(element)));
-        } finally {
-            elementInicial = null;            
-        }
-    };
+                switch (item) {
+                    case '*':
+                        if (element !== document)
+                            throw "Apenas use '*' sozinho para se quiser pegar todos elementos da tela."
+                        return getElement(selectors, element.getElementsByTagName("*").toArray());
+                    case '||':
+                        return (isArray ? (element.length ? element : false) : element) ||
+                                getElement(selectors, elementInicial);
+                    case '&&': return getElement(selectors, element, { _include: true });
+                    case '!':
+                        if (element === document) {
+                            config._include = true;
+                            element = element.getElementsByTagName("*").toArray();
+                        }
+                        return getElement(selectors, element, addObjectAttribute(config, "_not", true));
+                    case '#': return getElement(selectors, document.getElementById(selectors.shift()));
+                    case '+':
+                        item = selectors.shift();
+                        var funcGetAtt = (item === '+') ? (item = selectors.shift(), "getDOMAttribute") : "getAttribute";
+                        item = item.match(/([\w\s-\']+)|([<>=]+)/g);
+                        switch (item[1]) {
+                            case "=": funcFilter = el => ((el[funcGetAtt](item[0]) == item[2]) ^ config._not); break;
+                            case "<": funcFilter = el => ((parseFloat(el[funcGetAtt](item[0])) < parseFloat(item[2])) ^ config._not); break;
+                            case ">": funcFilter = el => ((parseFloat(el[funcGetAtt](item[0])) > parseFloat(item[2])) ^ config._not); break;
+                            case "<=": funcFilter = el => ((parseFloat(el[funcGetAtt](item[0])) <= parseFloat(item[2])) ^ config._not); break;
+                            case ">=": funcFilter = el => ((parseFloat(el[funcGetAtt](item[0])) >= parseFloat(item[2])) ^ config._not); break;
+                            default: funcFilter = el => ((!!el[funcGetAtt](item[0])) ^ config._not); break;
+                        }
+                        funcExec = el => el.getElementsByTagName("*").toArray().filter(funcFilter);
+                        break;
+                    case '.':
+                        item = selectors.shift();
+                        funcFilter = el => (el.className.split(" ").contains(item.split(" ")) ^ config._not);
+                        funcExec = el => el.getElementsByClassName(item).toArray();
+                        break;
+                    case ':':
+                        item = selectors.shift().toLowerCase();
+                        funcFilter = el => ((el.tagName.toLowerCase() === item) ^ config._not);
+                        funcExec = el => el.getElementsByTagName(item).toArray();
+                        break;
+                    default:
+                        funcFilter = el => ((el.name === item) ^ config._not);
+                        funcExec = el => (element === document) ? element.getElementsByName(item).toArray() :
+                                        (isArray ? el.reduce((array, e) => array.concat(getElement("+name=" + item, e)), []) : getElement("+name=" + item, el));
+                        break;
+                };
+
+                return getElement(selectors, config._include ?
+                                (isArray ? element.filter(funcFilter) : [element].filter(funcFilter)[0]) :
+                                (isArray ? element.reduce((array, el) => array.concat(funcExec(el)), []) : funcExec(element)));
+            } catch (err) {
+                console.log(err);
+            } finally {
+                elementInicial = null;
+            }
+        };
+    return getElement;
 })();
 
 /*
