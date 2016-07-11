@@ -103,50 +103,13 @@ Parametros:
 function processArray(obj) {
     setTimeout(function () {
         if (obj._percent)
-            renderizaPorcentagem(obj._percent, 100 - ((obj._array.length * 100) / obj._length));
+            percentageRender(obj._percent, 100 - ((obj._array.length * 100) / obj._length));
         (obj._array.splice(0, Math.ceil(obj._length * 0.1))).forEach(x => obj._process(x));
         if (obj._array.length > 0)
             setTimeout(processArray(obj));
         else if (obj._done)
             obj._done();
     });
-};
-
-/*
-Parametros:
-    array1: (Array) Primeiro array;
-    array2: (Array) Segundo array;
-Retorno: (Array) Array contendo a diferença entre os dois arrays enviados;
-*/
-//Retorna a diferença entre dois arrays.
-function diferencaArrays(array1, array2) {
-    var menor, maior = array1.length > array2.length ? (menor = array2, array1) : (menor = array1, array2);
-    return maior.filter(key => menor.indexOf(key) === -1);
-};
-
-/*
-Parametros:
-    array: (Array) Array a ser embaralhado;
-Retorno: (Array) Array embaralhado;
-*/
-//Embaralha array
-function shuffle(array) {
-    var currentIndex = array.length, temporaryValue, randomIndex;
-
-    //Enquanto ainda estiver elementos para ordenar
-    while (0 !== currentIndex) {
-
-        //Pegue um elemento faltando
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
-
-        //Troca pelo elemento atual
-        temporaryValue = array[currentIndex];
-        array[currentIndex] = array[randomIndex];
-        array[randomIndex] = temporaryValue;
-    }
-
-    return array;
 };
 
 //CORES
@@ -169,18 +132,6 @@ var HexToG = h => parseInt((cutHex(h)).substring(2, 4), 16);
    Retorno: (Int) B da cor enviada; */
 //Pega o B da Cor em Hexadecimal
 var HexToB = h => parseInt((cutHex(h)).substring(4, 6), 16);
-
-/*
-Parametros:
-    selection: (Array) Array de elementos a serem buscados;
-    el: (String OU Number) elemento a ser buscado;
-    att: (String) Atributo de comparação entre os elementos do array,
-            se não for enviada então a regra será comparar elemento por elemento;
-Retorno: (Array) Array com os elementos filtrados pela busca;
-*/
-//Retorna lista com itens contidos na lista recebida de acordo com a string recebida.
-var search = (selection, el, att) =>
-    selection.filter((d) => (att ? d[att] : d).toUpperCase().indexOf(el.toUpperCase()) != -1);
 
 /*
 Parametros:
@@ -218,6 +169,50 @@ Array.prototype.contains = function (element) {
         return true;
     } else
         return this.indexOf(element) !== -1;
+};
+
+/*
+Parametros:
+    el: (String OU Number) elemento a ser buscado;
+    att: (String) Atributo de comparação entre os elementos do array,
+            se não for enviada então a regra será comparar elemento por elemento;
+Retorno: (Array) Array com os elementos filtrados pela busca;
+*/
+//Retorna lista com itens contidos na lista recebida de acordo com a string recebida.
+Array.prototype.search = function(el, att){
+    return this.filter(d => (att ? d[att] : d).toUpperCase().indexOf(el.toUpperCase()) != -1);
+}
+
+/*
+Retorno: (Array) Array contendo a diferença entre os dois arrays enviados;
+*/
+//Retorna a diferença entre dois arrays.
+Array.prototype.difference = function(array) {
+    var menor, maior = this.length > array.length ? (menor = array, this) : (menor = this, array);
+    return maior.filter(key => menor.indexOf(key) === -1);
+};
+
+/*
+Retorno: (Array) Array embaralhado;
+*/
+//Embaralha array
+Array.prototype.shuffle = function() {
+    var currentIndex = this.length, temporaryValue, randomIndex;
+
+    //Enquanto ainda estiver elementos para ordenar
+    while (0 !== currentIndex) {
+
+        //Pegue um elemento faltando
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+
+        //Troca pelo elemento atual
+        temporaryValue = this[currentIndex];
+        this[currentIndex] = this[randomIndex];
+        this[randomIndex] = temporaryValue;
+    }
+
+    return this;
 };
 
 /* Retorno: (String) O nome do browser atual; */
@@ -370,7 +365,7 @@ var diacriticsMap = [
 var removeDiacritics = (str) => str.replace(/[^\u0000-\u007E]/g, a => diacriticsMap[a] || a);
 
 
-function testFast(func, param) {
+function howFast(func, param) {
     var start = performance.now();  // log start timestamp
     func(param);
     return performance.now() - start;  // log end timestamp
@@ -575,7 +570,7 @@ Parametros:
 var createElement = (el) => document.createElement(el);
 
 //Renderiza porcentagem do bootstrap
-var renderizaPorcentagem = (idProcess, value) =>
+var percentageRender = (idProcess, value) =>
     document.getElementById(idProcess).config({
         Swidth: value + "%", innerHTML: Math.round(value) + "%", "Aaria-valuenow": value
     });
@@ -589,7 +584,7 @@ var getAllCheckedRadioId = div =>
     getElement("#" + div + ":input&&+type=radio").filter(el => el.checked);
 
 //Pega o layout de outra página
-function getLayout(path, conatiner, fDone) {
+var getLayout = function(path, conatiner, fDone) {
     window.onload = function () {
         var container = document.documentElement.innerHTML;
         XAjax({
