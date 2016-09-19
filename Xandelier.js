@@ -340,14 +340,16 @@ var X, Xand, Xandelier;
     {
         X = (function () {
             var elementInicial = null,
-                regexQuery = /([\w\s-<>=]+)|\#|\.|\:|\+|\&\&|\|\||\!|\*/g,
+                regexQuery = /([\w\s-<>=]+)|#|\.|\[|\]|_|\+|&&|\|\||!|\,|\*/g,
                 regexAttOp = /([\w\s-\']+)|([<>=]+)/g,
                 funcGetAtt = "", funcExec = null, funcFilter = null, isDocument = true, isArray = false,
                 item = null, configuration = {},
                 funcExecAtt = function (el) {
-                    var query = (funcGetAtt === "getDOMAttribute") ? "*" : "[" + item[0] + (item[1] === '=' ? item[1] + item[2] : "") + "]",
-                        array = el.querySelectorAll(query).toArray();
-                    return (!item[1] || item[1] === '=') ? array : array.filter(funcFilter);
+                    var els = el.getElementsByTagName("*"), arr = [], i;
+                    for (i = 0; i < els.length; i++)
+                        if(funcFilter(els[i])) arr.push(els[i]);
+                    
+                    return arr;
                 },
                 mapFilters = {
                     '=': el => ((el[funcGetAtt](item[0]) == item[2]) ^ configuration._not),
@@ -357,30 +359,29 @@ var X, Xand, Xandelier;
                     '>=': el => ((parseFloat(el[funcGetAtt](item[0])) >= parseFloat(item[2])) ^ configuration._not),
                     'undefined': el => (el[funcGetAtt](item[0]) ^ configuration._not),
                     '.': el => (el.className.split(" ").contains(item.split(" ")) ^ configuration._not),
-                    ':': el => ((el.name === item) ^ configuration._not),
+                    '_': el => ((el.name === item) ^ configuration._not),
                     'tagName': el => ((el.tagName.toLowerCase() === item) ^ configuration._not)
                 }, 
                 mapExec = {
                     '=': funcExecAtt, '<': funcExecAtt, '>': funcExecAtt, '<=': funcExecAtt, '>=': funcExecAtt, 'undefined': funcExecAtt,
                     '.': el => el.getElementsByClassName(item).toArray(),
-                    ':': el => (isDocument) ? document.getElementsByName(item).toArray() :
+                    '_': el => (isDocument) ? document.getElementsByName(item).toArray() :
                             (isArray ? el.reduce((array, e) => array.concat(getElementCore("+name=" + item, e)), []) : getElementCore("+name=" + item, el)),
                     'tagName': el => el.getElementsByTagName(item).toArray()
                 },
-                getElementCore = function (selector, element, config) {
+                getElementCore = function (selectors, element, config) {
                     try {
                         elementInicial = elementInicial || (element = element || document);
-                        if (!selector.length || !element) return element;
+                        if (!selectors.length || !element) return element;
                         configuration = config = config || {};
                         isDocument = (element === document);
                         isArray = (X.TypeOf(element) === "array");
                         funcFilter = null;
-                        var selectors = (typeof selector === "string") ? selector.match(regexQuery) : selector,
-                            firstSelector = selectors.shift();
+                        selectors = (typeof selectors === "string") ? selectors.match(regexQuery).map(x => x = x.trim()) : selectors;
+                        var firstSelector = selectors.shift();
+
                         switch (firstSelector) {
                             case '*':
-                                if (!isDocument)
-                                    throw "Apenas use '*' sozinho para se quiser pegar todos elementos da tela."
                                 return getElementCore(selectors, element.getElementsByTagName("*").toArray());
                             case '||':
                                 return (isArray ? (element.length ? element : false) : element) ||
@@ -394,13 +395,14 @@ var X, Xand, Xandelier;
                                 config._not = true;
                                 return getElementCore(selectors, element, config);
                             case '#': return getElementCore(selectors, document.getElementById(selectors.shift()));
-                            case '+':
+                            case '[':
                                 item = selectors.shift();
                                 funcGetAtt = (item === '+') ? (item = selectors.shift(), "getDOMAttribute") : "getAttribute";
+                                if(selectors.shift() !== ']') throw "Os conchetes não foram fechados. Ex.: [attribute=value]";
                                 item = item.match(regexAttOp);
                                 firstSelector = item[1] + "";
                                 break;
-                            case '.': case ':': item = selectors.shift(); break;
+                            case '.': case '_': item = selectors.shift(); break;
                             default: item = firstSelector.toLowerCase(); break;
                         };
                         funcFilter = mapFilters[firstSelector] || mapFilters["tagName"];
