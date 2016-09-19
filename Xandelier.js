@@ -16,7 +16,7 @@
     Retorno: (Boolean) Se o próprio elemento possui classe enviada;
     */
     Element.prototype.hasClass = function (className) {
-        return this.className.indexOf(className) > -1;
+        return this.className.split(" ").indexOf(className) > -1;
     };
     
     /*
@@ -340,25 +340,20 @@ var X, Xand, Xandelier;
     {
         X = (function () {
             var elementInicial = null,
-                regexQuery = /([\w\s-<>=]+)|#|\.|\[|\]|_|\+|&&|\|\||!|\,|\*/g,
-                regexAttOp = /([\w\s-\']+)|([<>=]+)/g,
+                regexQuery = /[\w\-\<\>\=]+|\#|\.|\[\+?[\w\s\-\<\>\=]+\]|\_|\s|\|\||\!|\,|\*/g,
+                regexAttOp = /[\w\s\-]+|[\<\>\=]+/g,
+                regexAttBrackets = /[\w\s\-\<\>\=]+|\[|\+|\]/g,
                 funcGetAtt = "", funcExec = null, funcFilter = null, isDocument = true, isArray = false,
                 item = null, configuration = {},
-                funcExecAtt = function (el) {
-                    var els = el.getElementsByTagName("*"), arr = [], i;
-                    for (i = 0; i < els.length; i++)
-                        if(funcFilter(els[i])) arr.push(els[i]);
-                    
-                    return arr;
-                },
+                funcExecAtt = (el) => el.getElementsByTagName("*").toArray().filter(funcFilter),
                 mapFilters = {
                     '=': el => ((el[funcGetAtt](item[0]) == item[2]) ^ configuration._not),
                     '<': el => ((parseFloat(el[funcGetAtt](item[0])) < parseFloat(item[2])) ^ configuration._not),
                     '>': el => ((parseFloat(el[funcGetAtt](item[0])) > parseFloat(item[2])) ^ configuration._not),
                     '<=': el => ((parseFloat(el[funcGetAtt](item[0])) <= parseFloat(item[2])) ^ configuration._not),
                     '>=': el => ((parseFloat(el[funcGetAtt](item[0])) >= parseFloat(item[2])) ^ configuration._not),
-                    'undefined': el => (el[funcGetAtt](item[0]) ^ configuration._not),
-                    '.': el => (el.className.split(" ").contains(item.split(" ")) ^ configuration._not),
+                    'undefined': el => (!!el[funcGetAtt](item[0]) ^ configuration._not),
+                    '.': el => (el.hasClass(item) ^ configuration._not),
                     '_': el => ((el.name === item) ^ configuration._not),
                     'tagName': el => ((el.tagName.toLowerCase() === item) ^ configuration._not)
                 }, 
@@ -366,7 +361,8 @@ var X, Xand, Xandelier;
                     '=': funcExecAtt, '<': funcExecAtt, '>': funcExecAtt, '<=': funcExecAtt, '>=': funcExecAtt, 'undefined': funcExecAtt,
                     '.': el => el.getElementsByClassName(item).toArray(),
                     '_': el => (isDocument) ? document.getElementsByName(item).toArray() :
-                            (isArray ? el.reduce((array, e) => array.concat(getElementCore("+name=" + item, e)), []) : getElementCore("+name=" + item, el)),
+                            (isArray ? el.reduce((array, e) => array.concat(getElementCore("[name=" + item + "]", e, configuration)), []) : 
+                                getElementCore("[name=" + item + "]", el, configuration)),
                     'tagName': el => el.getElementsByTagName(item).toArray()
                 },
                 getElementCore = function (selectors, element, config) {
@@ -377,42 +373,41 @@ var X, Xand, Xandelier;
                         isDocument = (element === document);
                         isArray = (X.TypeOf(element) === "array");
                         funcFilter = null;
-                        selectors = (typeof selectors === "string") ? selectors.match(regexQuery).map(x => x = x.trim()) : selectors;
-                        var firstSelector = selectors.shift();
+                        selectors = (typeof selectors === "string") ? selectors.match(regexQuery) : selectors;
+                        var selector = selectors.shift(),
+                            selectorsAtt;
 
-                        switch (firstSelector) {
-                            case '*':
-                                return getElementCore(selectors, element.getElementsByTagName("*").toArray());
+                        switch (selector) {
+                            case '*': return getElementCore(selectors, element.getElementsByTagName("*").toArray());
                             case '||':
                                 return (isArray ? (element.length ? element : false) : element) ||
                                         getElementCore(selectors, elementInicial);
-                            case '&&': return getElementCore(selectors, element, { _include: true });
+                            case ' ': return getElementCore(selectors, element);
                             case '!':
-                                if (isDocument) {
-                                    config._include = true;
-                                    element = element.getElementsByTagName("*").toArray();
-                                }
+                                if (isDocument) element = element.getElementsByTagName("*").toArray();
                                 config._not = true;
                                 return getElementCore(selectors, element, config);
                             case '#': return getElementCore(selectors, document.getElementById(selectors.shift()));
-                            case '[':
-                                item = selectors.shift();
-                                funcGetAtt = (item === '+') ? (item = selectors.shift(), "getDOMAttribute") : "getAttribute";
-                                if(selectors.shift() !== ']') throw "Os conchetes não foram fechados. Ex.: [attribute=value]";
-                                item = item.match(regexAttOp);
-                                firstSelector = item[1] + "";
-                                break;
                             case '.': case '_': item = selectors.shift(); break;
-                            default: item = firstSelector.toLowerCase(); break;
+                            default:
+                                if(selector[0] === '['){
+                                    selectorsAtt = selector.match(regexAttBrackets);
+                                    selectorsAtt.shift();
+                                    item = selectorsAtt.shift();
+                                    funcGetAtt = (item === '+') ? (item = selectorsAtt.shift(), "getDOMAttribute") : "getAttribute";
+                                    if(selectorsAtt.shift() !== ']') throw "Os conchetes não foram fechados. Ex.: [atributo=valor]";
+                                    item = item.match(regexAttOp);
+                                    selector = item[1] + "";
+                                } else
+                                    item = selector.toLowerCase(); 
+                                break;
                         };
-                        funcFilter = mapFilters[firstSelector] || mapFilters["tagName"];
-                        funcExec = mapExec[firstSelector] || mapExec["tagName"];
+                        funcFilter = mapFilters[selector] || mapFilters["tagName"];
+                        funcExec = mapExec[selector] || mapExec["tagName"];
         
-                        return getElementCore(selectors, config._include ?
-                                        (isArray ? element.filter(funcFilter) : funcFilter(element)) :
-                                        (isArray ? element.reduce((array, el) => array.concat(funcExec(el)), []) : funcExec(element)));
-                    } catch (err) {
-                        console.log(err);
+                        return getElementCore(selectors, config._include ?         
+                                        (isArray ? element.filter(funcFilter) : funcFilter(element)) :          
+                                        (isArray ? element.reduce((array, el) => array.concat(funcExec(el)), []) : funcExec(element)), { _include: true });
                     } finally {
                         elementInicial = null;
                     }
@@ -713,7 +708,7 @@ var X, Xand, Xandelier;
             //Renderiza o Title.
             this.RenderTitle = function () {
                 X.Show(_titleEl, false);
-                X("+title").forEach(function (el) {
+                X("[title]").forEach(function (el) {
                     el.setAttribute(_titleName, el.title);
                     el.removeAttribute("title");
                     el.onmouseover = function () { showTitle(el.getAttribute(_titleName)); };
@@ -722,7 +717,7 @@ var X, Xand, Xandelier;
                 
                 document.getElementsByTagName("title").toArray().forEach(function (el) {
                     if (el.parentNode.tagName !== "HEAD") {
-                        el.parentNode.setAttribute(_presets._titleName, el.innerHTML);
+                        el.parentNode.setAttribute(_titleName, el.innerHTML);
                         el.remove();
                         el.parentNode.onmouseover = function () { showTitle(el.parentNode.getAttribute(_titleName)); };
                         el.parentNode.onmouseout = function () { hideTitle(); };
