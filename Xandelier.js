@@ -116,14 +116,28 @@
         return this[att];
     };
     
-    /*
-    Retorno: (Element) O Elemento enviado vazio;
-    */
+    /* Retorno: (Element) O Elemento enviado vazio; */
     //Esvazia o Elemento
     Element.prototype.empty = function () {
         while (this.firstChild)
             this.removeChild(this.firstChild);
         return this;
+    };
+    
+    /* Retorno: (Element) O Elemento posterior; */
+    Element.prototype.getNextElement = function () {
+        var el = this;
+        while(el.nextSibling && !el.nextSibling.tagName) 
+            el = el.nextSibling; 
+        return el.nextSibling
+    };
+    
+    /* Retorno: (Element) O Elemento anterior; */
+    Element.prototype.getPreviousElement = function () {
+        var el = this;
+        while(el.previousSibling && !el.previousSibling.tagName) 
+            el = el.previousSibling; 
+        return el.previousSibling
     };
     
     //Pega os elementos de dentro do Elemento de acordo com o seletor enviado
@@ -342,125 +356,142 @@ var X, Xand, Xandelier;
         X = (function () {
             var initialElement = null,
                 selectorMapper = { 
-                    ID: '#',    CHILDREN: '>', PRECEDED: '~', OR: '|',  ALLELEMENTS: ' ', VDOM: '%', 
+                    ID: '#',    CHILDREN: '>', PRECEDED: '~', OR: '|',  ALLCHILDREN: ' ', VDOM: '%', ALL: '*',
                     CLASS: '.', PARENT: '<',   SUCEDED: '+',  AND: ',', NOT: '!',         NAME: '_' 
                 },
-                regexQuery = new RegExp(`[\\w\\-]+|\\*|\\${selectorMapper.ID}|\\${selectorMapper.CLASS}|\\[\\${selectorMapper.VDOM}?[\\w\\s\\-\\<\\>\\~\\!\\|\\^\\$\\*\\=]+\\]|\\${selectorMapper.NAME}|\\${selectorMapper.ALLELEMENTS}|\\${selectorMapper.OR}|\\${selectorMapper.NOT}|\\${selectorMapper.AND}|\\${selectorMapper.CHILDREN}|\\${selectorMapper.PARENT}|\\${selectorMapper.SUCEDED}|\\${selectorMapper.PRECEDED}`, 'g'),
-                /* /[\w\-]+|\*|\#|\.|\[\%?[\w\s\-\<\>\=]+\]|\_|\ |\||\!|\,|\>|\<|\+|\~/g */
+                regexQuery = new RegExp(`[\\w\\-]+|\\${selectorMapper.ID}|\\${selectorMapper.CLASS}|\\[\\${selectorMapper.VDOM}?[\\w\\s\\-\\<\\>\\~\\!\\|\\^\\$\\*\\=]+\\]|\\${selectorMapper.ALL}|\\${selectorMapper.NAME}|\\${selectorMapper.ALLCHILDREN}|\\${selectorMapper.OR}|\\${selectorMapper.NOT}|\\${selectorMapper.AND}|\\${selectorMapper.CHILDREN}|\\${selectorMapper.PARENT}|\\${selectorMapper.SUCEDED}|\\${selectorMapper.PRECEDED}`, 'g'),
+                /* /[\w\-]+|\#|\.|\[\%?[\w\s\-\<\>\=]+\]|\*|\_|\ |\||\!|\,|\>|\<|\+|\~/g */
                 regexAttOp = new RegExp(`[\\w\\s\\-]+|[\\<\\>\\~\\!\\|\\^\\$\\*\\=]+|\\[|\\${selectorMapper.VDOM}|\\]`, 'g'),
-                /* /[\w\s\-]+|[\<\>\~\!\^\$\*\=]+|\[|\%|\]/g */
-                funcGetAtt = "", funcExec = null, funcFilter = null, isDocument = true,
-                item = null, _configNot = false,
-                funcExecAtt = (el) => el.getElementsByTagName("*").toArray().filter(funcFilter),
-                mapFilters = {
-                    '=':       el => ((el[funcGetAtt](item[0]) == item[2]) ^ _configNot),
-                    '<':       el => ((parseFloat(el[funcGetAtt](item[0])) < parseFloat(item[2])) ^ _configNot),
-                    '>':       el => ((parseFloat(el[funcGetAtt](item[0])) > parseFloat(item[2])) ^ _configNot),
-                    '<=':      el => ((parseFloat(el[funcGetAtt](item[0])) <= parseFloat(item[2])) ^ _configNot),
-                    '>=':      el => ((parseFloat(el[funcGetAtt](item[0])) >= parseFloat(item[2])) ^ _configNot),
-                    '!=':      el => ((el[funcGetAtt](item[0]) != item[2]) ^ _configNot),
-                    '~=':      el => ((el[funcGetAtt](item[0]) || "").split(" ").contains(item[2]) ^ _configNot),
-                    '|=':      el => (((el[funcGetAtt](item[0]) || "").indexOf(item[2] + '-') > -1) ^ _configNot),
-                    '^=':      el => ((el[funcGetAtt](item[0]) || "").startsWith(item[2]) ^ _configNot),
-                    '$=':      el => ((el[funcGetAtt](item[0]) || "").endsWith(item[2]) ^ _configNot),
-                    '*=':      el => (((el[funcGetAtt](item[0]) || "").indexOf(item[2]) > -1) ^ _configNot),
-                    'hasAtt':  el => (!!el[funcGetAtt](item[0]) ^ _configNot),
-                    '.':       el => (el.hasClass(item) ^ _configNot),
-                    '_':       el => ((el.name === item) ^ _configNot),
-                    'tagName': el => ((el.tagName.toLowerCase() === item) ^ _configNot)
-                }, 
-                mapExec = {
-                    '=': funcExecAtt,  '<': funcExecAtt,  '>': funcExecAtt,  '<=': funcExecAtt, '>=': funcExecAtt, 'hasAtt': funcExecAtt,
-                    '!=': funcExecAtt, '~=': funcExecAtt, '|=': funcExecAtt, '^=': funcExecAtt, '$=': funcExecAtt, '*=': funcExecAtt, 
-                    '.': el => el.getElementsByClassName(item).toArray(),
-                    '_': el => (isDocument) ? el.getElementsByName(item).toArray() :
-                                el.reduce((array, e) => array.concat(getElementCore("[name=" + item + "]", e)), []),
-                    'tagName': el => el.getElementsByTagName(item).toArray()
+                /* /[\w\s\-]+|[\<\>\~\!\|\^\$\*\=]+|\[|\%|\]/g */
+                funcGetAtt = "", funcExecFilter = null, isDocument = true,
+                item = null, _configNot = false, alreadyPassedParents = [],
+                funcExec = (el) => el.getElementsByTagName("*").toArray().filter(funcExecFilter.funcFilter),
+                mapFunc = {
+                    '=':        { funcFilter: el => ((el[funcGetAtt](item[0]) == item[2]) ^ _configNot), funcExec },
+                    '<':        { funcFilter: el => ((parseFloat(el[funcGetAtt](item[0])) < parseFloat(item[2])) ^ _configNot), funcExec },
+                    '>':        { funcFilter: el => ((parseFloat(el[funcGetAtt](item[0])) > parseFloat(item[2])) ^ _configNot), funcExec },
+                    '<=':       { funcFilter: el => ((parseFloat(el[funcGetAtt](item[0])) <= parseFloat(item[2])) ^ _configNot), funcExec },
+                    '>=':       { funcFilter: el => ((parseFloat(el[funcGetAtt](item[0])) >= parseFloat(item[2])) ^ _configNot), funcExec },
+                    '!=':       { funcFilter: el => ((el[funcGetAtt](item[0]) != item[2]) ^ _configNot), funcExec },
+                    '~=':       { funcFilter: el => ((el[funcGetAtt](item[0]) || "").split(" ").contains(item[2]) ^ _configNot), funcExec },
+                    '^=':       { funcFilter: el => ((el[funcGetAtt](item[0]) || "").startsWith(item[2]) ^ _configNot), funcExec },
+                    '$=':       { funcFilter: el => ((el[funcGetAtt](item[0]) || "").endsWith(item[2]) ^ _configNot), funcExec },
+                    '|=':       { funcFilter: el => (((el[funcGetAtt](item[0]) || "").indexOf(item[2] + '-') > -1) ^ _configNot), funcExec },
+                    '*=':       { funcFilter: el => (((el[funcGetAtt](item[0]) || "").indexOf(item[2]) > -1) ^ _configNot), funcExec },
+                    'hasAtt':   { funcFilter: el => (!!el[funcGetAtt](item[0]) ^ _configNot), funcExec },
+                    'tagName':  { funcFilter: el => ((el.tagName.toLowerCase() === item) ^ _configNot), 
+                                  funcExec:   el => el.getElementsByTagName(item).toArray() }, 
                 },
-                getElementCore;
-
-                mapExec[selectorMapper.CLASS] = 
-                mapExec[selectorMapper.NAME] = 
-
-                getElementCore = function (selectors, elements, config) {
-                    try {
-                        initialElement = initialElement || (elements = elements || document);
-                        if (!selectors.length || !elements) return elements;
-                        config = config || {};
-                        funcFilter = null;
-                        isDocument = (elements === document);
-                        if(X.TypeOf(elements) !== "array") elements = [elements];
-                        selectors = (typeof selectors === "string") ? selectors.match(regexQuery) : selectors;
-                        var selector = selectors.shift(), resultElements;
-
-                        //debugger;
-                        switch (selector) {
-                            case '*': return getElementCore(selectors, elements.reduce((array, el) => array.concat(el.getElementsByTagName("*").toArray()), []));
-                            case selectorMapper.ALLELEMENTS: 
-                                config._include = false;
-                                return getElementCore(selectors, elements, config);
-                            case selectorMapper.NOT:
-                                if (isDocument) elements = elements.getElementsByTagName("*").toArray();
-                                _configNot = true;
-                                return getElementCore(selectors, elements, config);
-                            case selectorMapper.ID:       return getElementCore(selectors, document.getElementById(selectors.shift()));
-                            case selectorMapper.CHILDREN: return getElementCore(selectors, elements, { _children: true });
-                            case selectorMapper.PARENT:   return getElementCore(selectors, elements, { _parent: true });
-                            case selectorMapper.SUCEDED:  return getElementCore(selectors, elements, { _suceded: true });
-                            case selectorMapper.PRECEDED: return getElementCore(selectors, elements, { _preceded: true });
-                            case selectorMapper.AND:      return elements.concat(getElementCore(selectors, initialElement));
-                            case selectorMapper.OR:       return (elements.length ? elements : false) || getElementCore(selectors, initialElement);
-                            case selectorMapper.CLASS: 
-                            case selectorMapper.NAME:     item = selectors.shift(); break;
-                            default:
-                                if(selector[0] === '['){
-                                    item = selector.match(regexAttOp);
-                                    item.shift();
-                                    funcGetAtt = (item[0] === selectorMapper.VDOM) ? (item.shift(), "getVDOMAttribute") : "getAttribute";
-                                    if(item.pop() !== ']') throw "Os conchetes não foram fechados. Ex.: [atributo=valor]";                                  
-                                    selector = item[1] || "hasAtt";
-                                } else
-                                    item = selector.toLowerCase(); 
-                                break;
-                        };
-                        
-                        funcFilter = mapFilters[selector] || mapFilters["tagName"];
-                        funcExec = mapExec[selector] || mapExec["tagName"];
-                        
-                        if(config._include)
-                            resultElements = elements.filter(funcFilter);
-                        else if(config._children)
-                            resultElements = elements.reduce((array, el) => array.concat(el.children.toArray().filter(funcFilter)), []);
-                        else if(config._parent)
-                            resultElements = elements.reduce(function(array, el) {
-                                if(funcFilter(el.parentElement))
-                                    array.push(el.parentElement);
-                                return array;
-                            }, []);
-                        else if(config._suceded)
-                            resultElements = elements.reduce(function(array, el) {
-                                while(!el.nextSibling.tagName) el = el.nextSibling;
-                                if(funcFilter(el.nextSibling))
-                                    array.push(el.nextSibling);
-                                return array;
-                            }, []);
-                        else if(config._preceded)
-                            resultElements = elements.reduce(function(array, el) {
-                                while(!el.previousSibling.tagName) el = el.previousSibling;
-                                if(funcFilter(el.previousSibling))
-                                    array.push(el.previousSibling);
-                                return array;
-                            }, []);
-                        else
-                            resultElements = elements.reduce((array, el) => array.concat(funcExec(el)), []);
-                        _configNot = false;
-        
-                        return getElementCore(selectors, resultElements, { _include: true });
-                    } finally {
-                        initialElement = null;
+                parentAlreadyPassed = function(el) {
+                    while(el.parentElement) {
+                        el = el.parentElement;
+                        if(alreadyPassedParents.contains(el)) return true;
                     }
-                };
-            return getElementCore;
+                    return false;
+                },
+                getElement;
+                
+            mapFunc[selectorMapper.CLASS] = { funcFilter: el => (el.hasClass(item) ^ _configNot),
+                                              funcExec:   el => el.getElementsByClassName(item).toArray() };
+
+            mapFunc[selectorMapper.NAME] =  { funcFilter: el => ((el.name === item) ^ _configNot),
+                                              funcExec:      el => (isDocument) ? document.getElementsByName(item).toArray() : funcExec(el) };
+            
+            getElement = function (selectors, elements, config) {
+                try {               
+                    initialElement = initialElement || (elements = elements || document);
+                    if (!elements) return elements;
+                    config = config || {};
+                    if(!selectors.length) {
+                        if(config._children) return elements.reduce((array, el) => array.concat(el.children.toArray()), []);
+                        if(config._parent)   return elements.map(el => el.parentElement);
+                        if(config._suceded)  return elements.map(el => el.getNextElement());
+                        if(config._preceded) return elements.map(el => el.getPreviousElement());
+                        
+                        return elements;
+                    }
+                    funcExecFilter = null;
+                    isDocument = (elements === document);
+                    if(X.TypeOf(elements) !== "array") elements = [elements];
+                    selectors = (typeof selectors === "string") ? selectors.match(regexQuery) : selectors;
+                    var selector = selectors.shift(), resultElements;
+
+                    //debugger;
+                    switch (selector) {
+                        case selectorMapper.ALL: return getElement(selectors, elements.reduce((array, el) => array.concat(el.getElementsByTagName("*").toArray()), []));
+                        case selectorMapper.ALLCHILDREN: 
+                            config._allChildren = false;
+                            return getElement(selectors, elements, config);
+                        case selectorMapper.NOT:
+                            if (isDocument) elements = document.getElementsByTagName("*").toArray();
+                            _configNot = true;
+                            return getElement(selectors, elements, config);
+                        case selectorMapper.ID:       return getElement(selectors, document.getElementById(selectors.shift()));
+                        case selectorMapper.CHILDREN: return getElement(selectors, elements, { _children: true });
+                        case selectorMapper.PARENT:   return getElement(selectors, elements, { _parent:   true });
+                        case selectorMapper.SUCEDED:  return getElement(selectors, elements, { _suceded:  true });
+                        case selectorMapper.PRECEDED: return getElement(selectors, elements, { _preceded: true });
+                        case selectorMapper.AND:      return elements.concat(getElement(selectors, initialElement));
+                        case selectorMapper.OR:       return (elements.length ? elements : false) || getElement(selectors, initialElement);
+                        case selectorMapper.CLASS: 
+                        case selectorMapper.NAME:     item = selectors.shift(); break;
+                        default:
+                            if(selector[0] === '['){
+                                item = selector.match(regexAttOp);
+                                item.shift();
+                                funcGetAtt = (item[0] === selectorMapper.VDOM) ? (item.shift(), "getVDOMAttribute") : "getAttribute";
+                                if(item.pop() !== ']') throw "Os conchetes não foram fechados. Ex.: [atributo=valor]";                                  
+                                selector = item[1] || "hasAtt";
+                            } else
+                                item = selector.toLowerCase(); 
+                            break;
+                    };
+                    
+                    funcExecFilter = mapFunc[selector] || mapFunc["tagName"];
+                    
+                    if(config._allChildren)
+                        resultElements = elements.filter(funcExecFilter.funcFilter);
+                    else if(config._children)
+                        resultElements = elements.reduce((array, el) => array.concat(el.children.toArray().filter(funcExecFilter.funcFilter)), []);
+                    else if(config._parent)
+                        resultElements = elements.reduce(function(array, el) {
+                            if(funcExecFilter.funcFilter(el.parentElement))
+                                array.push(el.parentElement);
+                            return array;
+                        }, []);
+                    else if(config._suceded)
+                        resultElements = elements.reduce(function(array, el) {
+                            el = el.getNextELement();
+                            if(funcExecFilter.funcFilter(el))
+                                array.push(el);
+                            return array;
+                        }, []);
+                    else if(config._preceded)
+                        resultElements = elements.reduce(function(array, el) {
+                            el = el.getPreviousELement();
+                            if(funcExecFilter.funcFilter(el))
+                                array.push(el);
+                            return array;
+                        }, []);
+                    else {
+                        alreadyPassedParents = [];
+                        resultElements = elements.reduce(function(array, el) {
+                            if(!parentAlreadyPassed(el)) {
+                                alreadyPassedParents.push(el);
+                                return array.concat(funcExecFilter.funcExec(el));
+                            }
+                            return array;
+                        }, []);
+                    }
+                    _configNot = false;
+    
+                    return getElement(selectors, resultElements, { _include: true });
+                } finally {
+                    initialElement = null;
+                }
+            };
+            
+            return getElement;
         })();
         
         /*
@@ -572,46 +603,46 @@ var X, Xand, Xandelier;
                         document.body[(content ? "append" : "remove") + "Child"](_divBackdrop);
                     } else document.body.removeClass("modal-open");
                     if (!content && this.onHideModal) this.onHideModal();
-                };
-                
-            var createModal = function (id, modalConfig) {              
-                modalConfig = modalConfig || {};
-    
-                modalConfig._XBtn = modalConfig._XBtn === undefined ? "x" : modalConfig._XBtn;
-                modalConfig._XBtn = modalConfig._XBtn === false ? _divNone :
-                    document.createElement('BUTTON').config({
-                        className: "close", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: modalConfig._XBtn
-                    });
-    
-                modalConfig._head = modalConfig._head || _divNone;
-                modalConfig._body = modalConfig._body || _divNone;
-    
-                modalConfig._foot = modalConfig._foot === undefined ?
-                    document.createElement('BUTTON').config({
-                        className: "btn btn-default", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "Fechar"
-                    }) : modalConfig._foot || _divNone;
-    
-                element = document.body
-                    .appendChild(document.createElement('DIV').config({ id: id, className: "modal fade" })
-                        .append(document.createElement('DIV').config(_configConfig(modalConfig, "_configDialog", "modal-dialog"))
-                            .append(document.createElement('DIV').config(_configConfig(modalConfig, "_configContent", "modal-content"))
-                                .append(document.createElement('DIV').config(_configConfig(modalConfig, "_configHead", "modal-header"))
-                                    .append(modalConfig._XBtn)
-                                    .append(document.createElement('H4').config(_configConfig(modalConfig, "_configTitle", "modal-title")))
-                                    .append(modalConfig._head))
-                                .append(document.createElement('DIV').config(_configConfig(modalConfig, "_configBody", "modal-body"))
-                                    .append(modalConfig._body))
-                                .append(document.createElement('DIV').config(_configConfig(modalConfig, "_configFoot", "modal-footer"))
-                                    .append(modalConfig._foot)
+                },
+                createModal = function (id, modalConfig) {              
+                    modalConfig = modalConfig || {};
+        
+                    modalConfig._XBtn = modalConfig._XBtn === undefined ? "x" : modalConfig._XBtn;
+                    modalConfig._XBtn = modalConfig._XBtn === false ? _divNone :
+                        document.createElement('BUTTON').config({
+                            className: "close", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: modalConfig._XBtn
+                        });
+        
+                    modalConfig._head = modalConfig._head || _divNone;
+                    modalConfig._body = modalConfig._body || _divNone;
+        
+                    modalConfig._foot = modalConfig._foot === undefined ?
+                        document.createElement('BUTTON').config({
+                            className: "btn btn-default", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "Fechar"
+                        }) : modalConfig._foot || _divNone;
+        
+                    element = document.body
+                        .appendChild(document.createElement('DIV').config({ id: id, className: "modal fade" })
+                            .append(document.createElement('DIV').config(_configConfig(modalConfig, "_configDialog", "modal-dialog"))
+                                .append(document.createElement('DIV').config(_configConfig(modalConfig, "_configContent", "modal-content"))
+                                    .append(document.createElement('DIV').config(_configConfig(modalConfig, "_configHead", "modal-header"))
+                                        .append(modalConfig._XBtn)
+                                        .append(document.createElement('H4').config(_configConfig(modalConfig, "_configTitle", "modal-title")))
+                                        .append(modalConfig._head))
+                                    .append(document.createElement('DIV').config(_configConfig(modalConfig, "_configBody", "modal-body"))
+                                        .append(modalConfig._body))
+                                    .append(document.createElement('DIV').config(_configConfig(modalConfig, "_configFoot", "modal-footer"))
+                                        .append(modalConfig._foot)
+                                    )
                                 )
                             )
-                        )
-                    );
+                        );
+                        
+                    element.config({ Toggle, IsShown: false, ModalConfiguration: modalConfig });
                     
-                element.config({ Toggle, IsShown: false, ModalConfiguration: modalConfig });
-                
-                return element;
-            };          
+                    return element;
+                };          
+            
             return createModal;
         })();
         
@@ -699,9 +730,9 @@ var X, Xand, Xandelier;
                         .append(document.createElement('DIV').config({ className: "input-group" })
                             .append(document.createElement("INPUT").config({ type: "text", className: "form-control", SmaxWidth: "none" }))
                             .append(document.createElement("SPAN").config({ className: "input-group-btn" })
-                            .append(document.createElement("BUTTON").config({
-                                className: "btn btn-defaul", type: "button", innerHTML: "OK", Sborder: "none"
-                            }))
+                                .append(document.createElement("BUTTON").config({
+                                    className: "btn btn-defaul", type: "button", innerHTML: "OK", Sborder: "none"
+                                }))
                             )),
                         _configFoot: { style: { display: "none" } }
                     });
