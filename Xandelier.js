@@ -1,255 +1,4 @@
 "use strict";
-///////////////////////////////////////CROSS-BROWSER SUPPORT////////////////////////////////////////
-{
-    // Production steps of ECMA-262, Edition 5, 15.4.4.18
-    // Reference: http://es5.github.com/#x15.4.4.18
-    if (!Array.prototype.forEach) {
-    
-        Array.prototype.forEach = function forEach( callback, thisArg ) {
-        
-            var T, k;
-        
-            if ( this == null ) {
-                throw new TypeError( "this is null or not defined" );
-            }
-        
-            // 1. Let O be the result of calling ToObject passing the |this| value as the argument.
-            var O = Object(this);
-        
-            // 2. Let lenValue be the result of calling the Get internal method of O with the argument "length".
-            // 3. Let len be ToUint32(lenValue).
-            var len = O.length >>> 0; // Hack to convert O.length to a UInt32
-        
-            // 4. If IsCallable(callback) is false, throw a TypeError exception.
-            // See: http://es5.github.com/#x9.11
-            if ( {}.toString.call(callback) !== "[object Function]" ) {
-                throw new TypeError( callback + " is not a function" );
-            }
-        
-            // 5. If thisArg was supplied, let T be thisArg; else let T be undefined.
-            if ( thisArg ) {
-                T = thisArg;
-            }
-        
-            // 6. Let k be 0
-            k = 0;
-        
-            // 7. Repeat, while k < len
-            while( k < len ) {
-        
-                var kValue;
-            
-                // a. Let Pk be ToString(k).
-                //   This is implicit for LHS operands of the in operator
-                // b. Let kPresent be the result of calling the HasProperty internal method of O with argument Pk.
-                //   This step can be combined with c
-                // c. If kPresent is true, then
-                if ( Object.prototype.hasOwnProperty.call(O, k) ) {
-            
-                    // i. Let kValue be the result of calling the Get internal method of O with argument Pk.
-                    kValue = O[ k ];
-            
-                    // ii. Call the Call internal method of callback with T as the this value and
-                    // argument list containing kValue, k, and O.
-                    callback.call( T, kValue, k, O );
-                }
-                // d. Increase k by 1.
-                k++;
-            }
-            // 8. return undefined
-        };
-    }
-    
-    // Production steps of ECMA-262, Edition 5, 15.4.4.19
-    // Reference: http://es5.github.io/#x15.4.4.19
-    if (!Array.prototype.map) {
-    
-        Array.prototype.map = function(callback, thisArg) {
-        
-            var T, A, k;
-        
-            if (this == null) {
-                throw new TypeError(' this is null or not defined');
-            }
-        
-            //  1. Let O be the result of calling ToObject passing the |this| 
-            //    value as the argument.
-            var O = Object(this);
-        
-            // 2. Let lenValue be the result of calling the Get internal 
-            //    method of O with the argument "length".
-            // 3. Let len be ToUint32(lenValue).
-            var len = O.length >>> 0;
-        
-            // 4. If IsCallable(callback) is false, throw a TypeError exception.
-            // See: http://es5.github.com/#x9.11
-            if (typeof callback !== 'function') {
-                throw new TypeError(callback + ' is not a function');
-            }
-        
-            // 5. If thisArg was supplied, let T be thisArg; else let T be undefined.
-            if (arguments.length > 1) {
-                T = thisArg;
-            }
-        
-            // 6. Let A be a new array created as if by the expression new Array(len) 
-            //    where Array is the standard built-in constructor with that name and 
-            //    len is the value of len.
-            A = new Array(len);
-        
-            // 7. Let k be 0
-            k = 0;
-        
-            // 8. Repeat, while k < len
-            while (k < len) {
-        
-                var kValue, mappedValue;
-            
-                // a. Let Pk be ToString(k).
-                //   This is implicit for LHS operands of the in operator
-                // b. Let kPresent be the result of calling the HasProperty internal 
-                //    method of O with argument Pk.
-                //   This step can be combined with c
-                // c. If kPresent is true, then
-                if (k in O) {
-            
-                    // i. Let kValue be the result of calling the Get internal 
-                    //    method of O with argument Pk.
-                    kValue = O[k];
-            
-                    // ii. Let mappedValue be the result of calling the Call internal 
-                    //     method of callback with T as the this value and argument 
-                    //     list containing kValue, k, and O.
-                    mappedValue = callback.call(T, kValue, k, O);
-            
-                    // iii. Call the DefineOwnProperty internal method of A with arguments
-                    // Pk, Property Descriptor
-                    // { Value: mappedValue,
-                    //   Writable: true,
-                    //   Enumerable: true,
-                    //   Configurable: true },
-                    // and false.
-            
-                    // In browsers that support Object.defineProperty, use the following:
-                    // Object.defineProperty(A, k, {
-                    //   value: mappedValue,
-                    //   writable: true,
-                    //   enumerable: true,
-                    //   configurable: true
-                    // });
-            
-                    // For best browser support, use the following:
-                    A[k] = mappedValue;
-                }
-                // d. Increase k by 1.
-                k++;
-            }
-        
-            // 9. return A
-            return A;
-        };
-    }
-    
-    // Production steps of ECMA-262, Edition 5, 15.4.4.20
-    // Reference: http://es5.github.io/#x15.4.4.20
-    if (!Array.prototype.filter) {
-        Array.prototype.filter = function(fun/*, thisArg*/) {
-            'use strict';
-        
-            if (this === void 0 || this === null) {
-                throw new TypeError();
-            }
-        
-            var t = Object(this);
-            var len = t.length >>> 0;
-            if (typeof fun !== 'function') {
-                throw new TypeError();
-            }
-        
-            var res = [];
-            var thisArg = arguments.length >= 2 ? arguments[1] : void 0;
-            for (var i = 0; i < len; i++) {
-                if (i in t) {
-                    var val = t[i];
-            
-                    // NOTE: Technically this should Object.defineProperty at
-                    //       the next index, as push can be affected by
-                    //       properties on Object.prototype and Array.prototype.
-                    //       But that method's new, and collisions should be
-                    //       rare, so use the more-compatible alternative.
-                    if (fun.call(thisArg, val, i, t)) {
-                        res.push(val);
-                    }
-                }
-            }
-        
-            return res;
-        };
-    }
-    
-    // Etapas de produção para o ECMA-262, Edition 5, 15.4.4.21
-    // Referencia: http://es5.github.io/#x15.4.4.21
-    if (!Array.prototype.reduce) {
-        Array.prototype.reduce = function(callback /*, valorInicial*/) {
-            'use strict';
-            if (this == null) {
-                throw new TypeError('Array.prototype.reduce chamado é nulo (null) ou indefinido (undefined)');
-            }
-            if (typeof callback !== 'function') {
-                throw new TypeError(callback + ' não é uma função')
-            }
-            var t = Object(this), len = t.length >>> 0, k = 0, value;
-            if (arguments.length == 2) {
-                value = arguments[1];
-            } else {
-                while (k < len && !(k in t)) {
-                    k++; 
-            }
-            if (k >= len) {
-                throw new TypeError('Reduce possui um array vazio sem um valor inicial');
-            }
-            value = t[k++];
-            }
-            for (; k < len; k++) {
-                if (k in t) {
-                    value = callback(value, t[k], k, t);
-                }
-            }
-            return value;
-        };
-    }
-        
-    var X_IS_IE7 = false;
-    if (!window.Element) {
-        var Element = function(){};
-        X_IS_IE7 = true;
-    }
-    
-    if (!window.NodeList) {
-        var NodeList = function(){};
-        X_IS_IE7 = true;
-    }
-    
-    if (!window.HTMLCollection) {
-        var HTMLCollection = function(){};
-        X_IS_IE7 = true;
-    }
-    
-    if (!Object.keys) {
-        Object.keys = function(obj) {
-            var keys = [];
-        
-            for (var i in obj) {
-                if (obj.hasOwnProperty(i)) {
-                    keys.push(i);
-                }
-            }
-        
-            return keys;
-        };
-    }
-}
-
 ////////////////////////////////////////////PROTOTYPES//////////////////////////////////////////////
 {
     /* Retorno: (Array) A própria coleção mas em array; */
@@ -399,7 +148,7 @@
         return this.children[0];
     };
     
-    /* Retorno: (Element) O primeiro Elemento filho; */
+    /* Retorno: (Element) O último Elemento filho; */
     Element.prototype.lastElement = function () {
         return this.children[this.children.length - 1];
     };
@@ -407,6 +156,16 @@
     //Pega os elementos de dentro do Elemento de acordo com o seletor enviado
     Element.prototype.getElement = function (selector) {
         return X(selector, this);
+    };
+    
+    Element.prototype.getAllParents = function () {
+        var parents = [], elParentElement = this.parentElement;;
+		while (elParentElement) {
+			parents.unshift(elParentElement);
+			elParentElement = elParentElement.parentElement;
+		}
+		
+		return parents;
     };
     
     /*
@@ -500,7 +259,12 @@
         return this;
     };
         
-    /* Retorno: (String) ; */
+    /*
+    Parametros:
+        includers: (Array OU Objeto) Array ou Objeto com os valores à serem substituidos na string,
+                se for enviado um Array, irá substituir por index,
+				se for enviado um Objeto, irá substituir por atributo;
+    Retorno: (String) String formatada; */
     String.prototype.format = function(includers){
         var originalSt = this, 
             i = 0,
@@ -515,6 +279,7 @@
         return originalSt;
     };
 
+    var diacriticsMap;
     /* Retorno: (String) String sem acentos; */
     String.prototype.removeDiacritics = (function(){
         /*
@@ -529,7 +294,7 @@
         See the License for the specific language governing permissions and
         limitations under the License.
         */
-        var diacriticsMap = [
+        var diacriticsMap = diacriticsMap || [
             { base: 'A', letters: '\u0041\u24B6\uFF21\u00C0\u00C1\u00C2\u1EA6\u1EA4\u1EAA\u1EA8\u00C3\u0100\u0102\u1EB0\u1EAE\u1EB4\u1EB2\u0226\u01E0\u00C4\u01DE\u1EA2\u00C5\u01FA\u01CD\u0200\u0202\u1EA0\u1EAC\u1EB6\u1E00\u0104\u023A\u2C6F' },
             { base: 'AA', letters: '\uA732' },
             { base: 'AE', letters: '\u00C6\u01FC\u01E2' },
@@ -624,38 +389,7 @@
         return function() {
             return this.replace(/[^\u0000-\u007E]/g, function(a) { return diacriticsMap[a] || a; });
         };
-    })();
-    
-    if(X_IS_IE7) {          
-        ["createElement", "getElementById"].forEach(function(func){             
-            var docFunc = document[func];
-            document[func] = function(param) {
-                var element = docFunc(param);
-                if (element == null) { return null; }
-                for(var key in Element.prototype)
-                    element[key] = Element.prototype[key];
-                return element;
-            };
-        });
-        
-        ["getElementsByTagName", "getElementsByClassName", "getElementsByName"].forEach(function(func){             
-            var docFunc = document[func];
-            document[func] = function(param) {
-                var elements = docFunc(param);
-                if (elements == null) { return null; }
-                for(var key in NodeList.prototype)
-                    elements[key] = NodeList.prototype[key];
-                for(var key in HTMLCollection.prototype)
-                    elements[key] = HTMLCollection.prototype[key];
-                        
-                for(var i = 0; i < elements.length; i++)                        
-                    for(var key in Element.prototype)
-                        elements[i][key] = Element.prototype[key];
-                return elements;
-            };
-        });     
-    };
-    
+    })();    
 }
 
 var X, Xand, Xandelier;
@@ -671,7 +405,7 @@ var X, Xand, Xandelier;
 			regexAttOp = new RegExp("\\{VDOM}|[\\w\\s\\-]+|[\\<\\>\\~\\!\\|\\^\\$\\*\\=]+".format(selectorMapper), 'g'),
 			/* /\§|[\w\s\-]+|[\<\>\~\!\|\^\$\*\=]+/g */
 			regexType = /[\w\-]+|\(|[\w\-]+|\)/g,
-			inputsTagNames = ["INPUT", "SELECT"],
+			inputsTagNames = ["INPUT", "SELECT", "TEXTAREA", "BUTTON"],
 			funcGetAtt = null, 
 			item = null, 
 			_configNot = false,
@@ -690,7 +424,17 @@ var X, Xand, Xandelier;
 				'*=':       { funcFilter: function(el) { return (((funcGetAtt(el) || "").indexOf(item) > -1) ^ _configNot); }, funcExec: funcExec },
 				'hasAtt':   { funcFilter: function(el) { return (!!funcGetAtt(el) ^ _configNot); }, funcExec: funcExec },
 				'tagName':  { funcFilter: function(el) { return ((el.tagName.toLowerCase() === item) ^ _configNot); }, 
-							  funcExec:   function(el) { return el.getElementsByTagName(item).toArray(); } }
+							  funcExec:   function(el) { return el.getElementsByTagName(item).toArray(); } },
+				"funcAtt":  { funcFilter: function(el) { 
+								return el.getAttribute(funcGetAtt) == item || el.getAllParents().filter(function(e) { 
+									return e.getAttribute(funcGetAtt) == item; 
+								}).length > 0; 
+							  }, 
+							  funcExec:   function(el) { 
+								return el.getElementsByTagName("*").toArray().filter(function(e) { 
+									return !e.getAttribute(funcGetAtt) || e.getAttribute(funcGetAtt) == item; 
+								}); 
+							  } }   
 			},
 			mapType = {
 				"even":          { funcFilter: function(el) { return el.tagName === "TR" && (!(el.rowIndex % 2) ^ _configNot); }, funcExec: funcExec },
@@ -701,12 +445,12 @@ var X, Xand, Xandelier;
 				"last-of-type":  { funcFilter: function(el) { 
 									var elTypes = el.parentNode.getElement(">" + el.tagName); 
 									return (elTypes[elTypes.length - 1] === el) ^ _configNot; 
-								 }, funcExec: funcExec },
+								   }, funcExec: funcExec },
 				"only-child":    { funcFilter: function(el) { return (el.parentNode.firstElement() === el && el.parentNode.children.length === 1) ^ _configNot; }, funcExec: funcExec },
 				"only-of-type":  { funcFilter: function(el) { 
 									var elTypes = el.parentNode.getElement(">" + el.tagName); 
 									return (elTypes[0] === el && elTypes.length === 1) ^ _configNot; 
-								 }, funcExec: funcExec },
+								   }, funcExec: funcExec },
 				"header":        { funcFilter: function(el) { return !!el.tagName.match(/H\d/g) ^ _configNot; }, funcExec: funcExec },
 				"empty":         { funcFilter: function(el) { return (el.innerHTML === "") ^ _configNot; }, funcExec: funcExec },
 				"parent":        { funcFilter: function(el) { return (el.innerHTML !== "") ^ _configNot; }, funcExec: funcExec },
@@ -716,7 +460,7 @@ var X, Xand, Xandelier;
 				"enabled":       { funcFilter: function(el) { return !el.disabled ^ _configNot; }, funcExec: funcExec },
 				"disabled":      { funcFilter: function(el) { return el.disabled ^ _configNot; }, funcExec: funcExec },
 				"selected":      { funcFilter: function(el) { return el.tagName === "OPTION" && (el.selected ^ _configNot); }, funcExec: funcExec },
-				"checked":       { funcFilter: function(el) { return el.tagName === "INPUT" && (el.checked ^ _configNot); }, funcExec: funcExec }   
+				"checked":       { funcFilter: function(el) { return el.tagName === "INPUT" && (el.checked ^ _configNot); }, funcExec: funcExec }
 				//"animated":    { funcFilter: function(el) { return ((funcGetAtt(el) == item) ^ _configNot); }, funcExec: funcExec }   
 			},
 			mapFuncType = {
@@ -773,7 +517,7 @@ var X, Xand, Xandelier;
 				selectors = (typeof selectors === "string") ? selectors.match(regexQuery) : selectors;
 				selector = selectors.shift();
 				
-				//debugger;
+				// debugger;
 				switch (selector) {
 					case selectorMapper.ALL: return getElement(selectors, elements.reduce(function(array, el) { return array.concat(el.getElementsByTagName("*").toArray()); }, []));
 					case selectorMapper.ALLCHILDREN: 
@@ -802,10 +546,15 @@ var X, Xand, Xandelier;
 						funcExecFilter = mapType[item];
 						if(!funcExecFilter) {
 							arrayRegexType = item.match(regexType);
-							funcExecFilter = mapFuncType[arrayRegexType[0]];
-							if(funcExecFilter) {
-								if(arrayRegexType.shift() !== ')') throw "Os parentêses não foram fechados. Ex.: :funcao(valor)";
+							funcGetAtt = arrayRegexType[0];
+							funcExecFilter = mapFuncType[funcGetAtt];
+							if(funcExecFilter || funcGetAtt) {
+								if(arrayRegexType.pop() !== ')') throw "Os parentêses não foram fechados. Ex.: :funcao(valor)";
 								item = arrayRegexType[2];
+								if(!funcExecFilter) {
+									funcExecFilter = mapFunc["funcAtt"];
+									//selectors.unshift("*");	
+								}									
 							} else                              
 								funcExecFilter = mapFunc[selectorMapper.TYPE];
 						}
