@@ -1,46 +1,15 @@
-"use strict";
+'use strict';
 ////////////////////////////////////////////PROTOTYPES//////////////////////////////////////////////
 {
     /* Retorno: (Array) A própria coleção mas em array; */
-    HTMLCollection.prototype.toArray = 
-    NodeList.prototype.toArray = function () {
-        var arr = [], i;
-        for (i = 0; i < this.length; i++)
-            arr.push(this[i]);
-        return arr;
-    };
-    
-    /*
-    Parametros:
-        className: (String) Classe a ser verificada;
-    Retorno: (Boolean) Se o próprio elemento possui classe enviada;
-    */
-    Element.prototype.hasClass = function (className) {
-        return this.className.split(" ").indexOf(className) > -1;
-    };
-    
-    /*
-    Parametros:
-        className: (String) Classe a ser adicionada;
-    Retorno: (Element) Elemento;
-    */
-    Element.prototype.addClass = function (className) {
-        this.className = this.className.concat(" " + className);
-        return this;
-    };
-    
-    /*
-    Parametros:
-        className: (String) Classe a ser removida;
-    Retorno: (Element) Elemento;
-    */
-    Element.prototype.removeClass = function (className) {
-        var arrClassName = className.split(" "),
-            arr = this.className.split(" ").filter(function(c) { return arrClassName.indexOf(c) === -1; });
-        this.className = arr.join(" ");
-        return this;
-    };
-    
+    HTMLCollection.prototype.toArray =
+        NodeList.prototype.toArray = function () {
+            const arr = [];
+            for (let i = 0; i < this.length; i++)
+                arr.push(this[i]);
+            return arr;
+        };
+
     /*
     Parametros:
         att: (String) Atributo a ser adicionado ou removido;
@@ -55,7 +24,7 @@
             this.setAttribute(att, content);
         return this;
     };
-    
+
     /*
     Parametros:
         content: (Objeto OU Função) Objeto ou uma Função com as configurações do Elemento:
@@ -69,38 +38,37 @@
     Retorno: (Element) Elemento;
     */
     Element.prototype.config = function (content) {
-        var element = this;
-        if (typeof content === "function") 
-            content = content(element);
-        if(!content) return element;
-        Object.keys(content).forEach(function (att) {
-            if (typeof content[att] === "object") {
-                if(!element[att]) element[att] = {};
-                Object.keys(content[att]).forEach(function(att2){
-                    if (typeof element[att] === "function")
-                        element[att](att2, content[att][att2])
-                    else                
-                        element[att][att2] = content[att][att2];
+        if (typeof content === 'function')
+            content = content(this);
+        if (!content) return this;
+        Object.entries(content).forEach(([key, value]) => {
+            if (typeof value === 'object') {
+                if (!this[key]) this[key] = {};
+                Object.entries(value).forEach(([key2, value2]) => {
+                    if (typeof this[key] === 'function')
+                        this[key](key2, value2)
+                    else
+                        this[key][key2] = value2;
                 });
             } else
-                switch (att[0]) {
-                    case "F":
-                        element.addEventListener(att.substr(1), content[att]);
+                switch (key[0]) {
+                    case 'F':
+                        this.addEventListener(key.substr(1), value);
                         break;
-                    case "S":
-                        element.style[att.substr(1)] = content[att];
+                    case 'S':
+                        this.style[key.substr(1)] = value;
                         break;
-                    case "A":
-                        element.setAttribute(att.substr(1), content[att]);
+                    case 'A':
+                        this.setAttribute(key.substr(1), value);
                         break;
                     default:
-                        element[att] = content[att];
+                        this[key] = value;
                         break;
                 }
         });
-        return element;
+        return this;
     };
-    
+
     /*
     Parametros:
         att: (Element) Elemento que será inserido;
@@ -110,7 +78,7 @@
         this.appendChild(element);
         return this;
     };
-    
+
     /*
     Parametros:
         att: (String) Nome do atributo requisitado;
@@ -119,55 +87,55 @@
     Element.prototype.getVDOMAttribute = function (att) {
         return this[att];
     };
-    
+
     /* Retorno: (Element) O Elemento enviado vazio; */
     Element.prototype.empty = function () {
         while (this.firstChild)
             this.removeChild(this.firstChild);
         return this;
     };
-    
+
     /* Retorno: (Element) O Elemento posterior; */
     Element.prototype.getNextElement = function () {
-        var el = this;
-        while(el.nextSibling && !el.nextSibling.tagName) 
-            el = el.nextSibling; 
+        let el = this;
+        while (el.nextSibling && !el.nextSibling.tagName)
+            el = el.nextSibling;
         return el.nextSibling
     };
-    
+
     /* Retorno: (Element) O Elemento anterior; */
     Element.prototype.getPreviousElement = function () {
-        var el = this;
-        while(el.previousSibling && !el.previousSibling.tagName) 
-            el = el.previousSibling; 
+        let el = this;
+        while (el.previousSibling && !el.previousSibling.tagName)
+            el = el.previousSibling;
         return el.previousSibling
     };
-    
+
     /* Retorno: (Element) O primeiro Elemento filho; */
     Element.prototype.firstElement = function () {
         return this.children[0];
     };
-    
+
     /* Retorno: (Element) O último Elemento filho; */
     Element.prototype.lastElement = function () {
         return this.children[this.children.length - 1];
     };
-    
+
     //Pega os elementos de dentro do Elemento de acordo com o seletor enviado
     Element.prototype.getElement = function (selector) {
         return X(selector, this);
     };
-    
+
     Element.prototype.getAllParents = function () {
-        var parents = [], elParentElement = this.parentElement;;
-		while (elParentElement) {
-			parents.unshift(elParentElement);
-			elParentElement = elParentElement.parentElement;
-		}
-		
-		return parents;
+        const parents = [];
+        let elParentElement = this.parentElement;
+        while (elParentElement) {
+            parents.unshift(elParentElement);
+            elParentElement = elParentElement.parentElement;
+        }
+        return parents;
     };
-    
+
     /*
     Parametros:
         fun: (Function) Regra para separar elementos únicos no array,
@@ -176,125 +144,102 @@
                 se não então retornára o próprio array com elementos únicos;
     Retorno: (Array) O próprio array com elementos únicos de acordo com a regra enviada;
     */
-    Array.prototype.unique = function (fun, map) {
-        fun = fun || (function(c) { return c; });
-        var arrayUnique = [this[0]], 
+    Array.prototype.unique = function (fun = (c => c), map) {
+        const arrayUnique = [this[0]],
             arrayUniqueAtt = [fun(this[0])];
-        this.forEach(function(el){
-            if (arrayUniqueAtt.indexOf(fun(el)) === -1) {
-                arrayUniqueAtt.push(fun(el));
+        this.forEach(function (el) {
+            let value = fun(el);
+            if (!arrayUniqueAtt.includes(value)) {
+                arrayUniqueAtt.push(value);
                 arrayUnique.push(el);
             }
         });
         return map ? arrayUniqueAtt : arrayUnique;
     };
-    
+
     /*
     Parametros:
         element: Elemento ou sequência de elementos a ser verificado;
     Retorno: (Boolean) Se o elemento enviado está no próprio array;
     */
     Array.prototype.contains = function (element) {
-        var elementArray = this;
-        switch(X.TypeOf(element)) {
-            case "object": return Object.keys(content).filter(function(att) { return elementArray.indexOf(element[att]) === -1; }).length;
-            case "array": return element.filter(function(el) { return elementArray.indexOf(el) === -1; }).length;
-            default: return this.indexOf(element) !== -1;
+        switch (X.TypeOf(element)) {
+            case 'object': return !Object.values(content).find(val => !this.includes(val));
+            case 'array': return !element.find(el => !this.includes(el));
+            default: return this.includes(element);
         };
         return false;
     };
-    
+
     /*
     Parametros:
         el: (String OU Float) Elemento a ser buscado;
-        objSearch: (Objeto) Objeto com as configurações do ajax:
+        objSearch: (Objeto) Objeto com as configurações da busca:
             _att: (String) Atributo de comparação entre os elementos do array,
                     se não for enviada então a regra será comparar elemento por elemento;
             _diacriticsSensitive: (Boolean) Valor que indica se na comparação de strings não irá desconsiderar os acentos;
             _caseSensitive: (Boolean) Valor que indica se na comparação de strings não será Case Sensitive;
     Retorno: (Array) Array com os elementos filtrados pela busca;
     */
-    Array.prototype.search = function(el, objSearch){
-        var elType = typeof el, 
-            stringFun = function(str) {
-                if(!objSearch._diacriticsSensitive) str = str.removeDiacritics();
-                if(!objSearch._caseSensitive) str = str.toUpperCase();
-                return str;
-            };
-        return this.filter(function(d) {
-            d = (objSearch._att ? d[objSearch._att] : d);
-            switch(elType) {
-                case "number": return d === el;
-                case "string": return stringFun(d).indexOf(stringFun(el)) !== -1;
+    Array.prototype.search = function (el, objSearch) {
+        const normalizeString = (str) => {
+            if (!_diacriticsSensitive) str = str.removeDiacritics();
+            if (!_caseSensitive) str = str.toUpperCase();
+            return str;
+        };
+        let { _att, _diacriticsSensitive, _caseSensitive } = objSearch;
+        return this.filter((d) => {
+            d = (_att ? d[_att] : d);
+            switch (typeof el) {
+                case 'number': return d === el;
+                case 'string': return normalizeString(d).includes(normalizeString(el));
             }
             return false;
         });
     };
-    
+
     /* Retorno: (Array) Array contendo a diferença entre os dois arrays enviados; */
-    Array.prototype.difference = function(array) {
-        var smaller, 
-            larger = this.length > array.length ? 
-                (smaller = array, this) : 
-                (smaller = this, array);
-        return larger.filter(function(key) { return smaller.indexOf(key) === -1; });
+    Array.prototype.difference = function (array) {
+        let smaller;
+        const larger = this.length > array.length ?
+            (smaller = array, this) :
+            (smaller = this, array);
+        return larger.filter(key => !smaller.includes(key));
     };
-    
+
     /* Retorno: (Array) Array embaralhado; */
-    Array.prototype.shuffle = function() {
-        var currentIndex = this.length, temporaryValue, randomIndex;
-    
+    Array.prototype.shuffle = function () {
+        let currentIndex = this.length,
+            randomIndex;
+
         //Enquanto ainda estiver elementos para ordenar
         while (0 !== currentIndex) {
             //Pegue um elemento faltando
             randomIndex = Math.floor(Math.random() * currentIndex);
             currentIndex--;
-    
+
             //Troca pelo elemento atual
-            temporaryValue = this[currentIndex];
-            this[currentIndex] = this[randomIndex];
-            this[randomIndex] = temporaryValue;
+            [this[randomIndex], this[currentIndex]] = [this[currentIndex], this[randomIndex]];
         }
-    
+
         return this;
     };
-        
-    /*
-    Parametros:
-        includers: (Array OU Objeto) Array ou Objeto com os valores à serem substituidos na string,
-                se for enviado um Array, irá substituir por index,
-				se for enviado um Objeto, irá substituir por atributo;
-    Retorno: (String) String formatada; */
-    String.prototype.format = function(includers){
-        var originalSt = this, 
-            i = 0,
-            index,
-            isObj = includers.length === undefined,
-            array = isObj ? Object.keys(includers) : includers;
-            
-        for(i = 0; i < array.length; i++) {
-            index = isObj ? array[i] : i;
-            originalSt = originalSt.replace("{" + index + "}", includers[index]);
-        }
-        return originalSt;
-    };
 
-    var diacriticsMap;
     /* Retorno: (String) String sem acentos; */
-    String.prototype.removeDiacritics = (function(){
+    String.prototype.removeDiacritics = (function () {
         /*
         Copyright 2015 rdllopes http://stackoverflow.com/users/1879686/rdllopes from http://stackoverflow.com/questions/990904/javascript-remove-accents-diacritics-in-strings
-        Licensed under the Apache License, Version 2.0 (the "License");
+        Licensed under the Apache License, Version 2.0 (the 'License');
         you may not use this file except in compliance with the License.
         You may obtain a copy of the License at
         http://www.apache.org/licenses/LICENSE-2.0
         Unless required by applicable law or agreed to in writing, software
-        distributed under the License is distributed on an "AS IS" BASIS,
+        distributed under the License is distributed on an 'AS IS' BASIS,
         WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
         See the License for the specific language governing permissions and
         limitations under the License.
         */
-        var diacriticsMap = diacriticsMap || [
+        const diacriticsMap = [
             { base: 'A', letters: '\u0041\u24B6\uFF21\u00C0\u00C1\u00C2\u1EA6\u1EA4\u1EAA\u1EA8\u00C3\u0100\u0102\u1EB0\u1EAE\u1EB4\u1EB2\u0226\u01E0\u00C4\u01DE\u1EA2\u00C5\u01FA\u01CD\u0200\u0202\u1EA0\u1EAC\u1EB6\u1E00\u0104\u023A\u2C6F' },
             { base: 'AA', letters: '\uA732' },
             { base: 'AE', letters: '\u00C6\u01FC\u01E2' },
@@ -382,238 +327,239 @@
             { base: 'y', letters: '\u0079\u24E8\uFF59\u1EF3\u00FD\u0177\u1EF9\u0233\u1E8F\u00FF\u1EF7\u1E99\u1EF5\u01B4\u024F\u1EFF' },
             { base: 'z', letters: '\u007A\u24E9\uFF5A\u017A\u1E91\u017C\u017E\u1E93\u1E95\u01B6\u0225\u0240\u2C6C\uA763' }
         ].reduce(function (obj, item) {
-            item.letters.split("").forEach(function(l) { return obj[l] = item.base; });
+            [...item.letters].forEach(l => obj[l] = item.base);
             return obj;
         }, {});
-        // "what?" version... http://jsperf.com/diacritics/12
-        return function() {
-            return this.replace(/[^\u0000-\u007E]/g, function(a) { return diacriticsMap[a] || a; });
+        // 'what?' version... http://jsperf.com/diacritics/12
+        return function () {
+            return this.replace(/[^\u0000-\u007E]/g, a => diacriticsMap[a] || a);
         };
-    })();    
+    })();
 }
 
-var X, Xand, Xandelier;
- X = Xand = Xandelier = (function () {
-    var X = (function () {
-		var initialElement = null,
-			selectorMapper = { 
-				ID: '#',    CHILDREN: '>', PRECEDED: '~', OR: '|',  ALLCHILDREN: ' ', VDOM: '§', ALL: '*',
-				CLASS: '.', PARENT: '<',   SUCEDED: '+',  AND: ',', NOT: '!',         NAME: '$', TYPE: ':' 
-			},
-			regexQuery = new RegExp("[\\w\\-]+(\\([\\w\\-]+\\))?|\\{ID}|\\{CLASS}|\\[\\{VDOM}?[\\w\\s\\-\\<\\>\\~\\!\\|\\^\\$\\*\\=]+|\\]|\\{ALL}|\\{NAME}|\\{ALLCHILDREN}|\\{OR}|\\{NOT}|\\{AND}|\\{CHILDREN}|\\{PARENT}|\\{SUCEDED}|\\{PRECEDED}|\\{TYPE}".format(selectorMapper), 'g'),
-			/* /[\w\-]+(\([\w\-]+\))?|\#|\.|\[\§?[\w\s\-\<\>\~\!\|\^\$\*\=]+|\]|\*|\$|\ |\||\!|\,|\>|\<|\+|\~|\:/g */
-			regexAttOp = new RegExp("\\{VDOM}|[\\w\\s\\-]+|[\\<\\>\\~\\!\\|\\^\\$\\*\\=]+".format(selectorMapper), 'g'),
-			/* /\§|[\w\s\-]+|[\<\>\~\!\|\^\$\*\=]+/g */
-			regexType = /[\w\-]+|\(|[\w\-]+|\)/g,
-			inputsTagNames = ["INPUT", "SELECT", "TEXTAREA", "BUTTON"],
-			funcGetAtt = null, 
-			item = null, 
-			_configNot = false,
-			funcExec = function(el){ return el.getElementsByTagName("*").toArray().filter(this.funcFilter); },
-			mapFunc = {
-				'=':        { funcFilter: function(el) { return ((funcGetAtt(el) == item) ^ _configNot); }, funcExec: funcExec },
-				'<':        { funcFilter: function(el) { return ((parseFloat(funcGetAtt(el)) < parseFloat(item)) ^ _configNot); }, funcExec: funcExec },
-				'>':        { funcFilter: function(el) { return ((parseFloat(funcGetAtt(el)) > parseFloat(item)) ^ _configNot); }, funcExec: funcExec },
-				'<=':       { funcFilter: function(el) { return ((parseFloat(funcGetAtt(el)) <= parseFloat(item)) ^ _configNot); }, funcExec: funcExec },
-				'>=':       { funcFilter: function(el) { return ((parseFloat(funcGetAtt(el)) >= parseFloat(item)) ^ _configNot); }, funcExec: funcExec },
-				'!=':       { funcFilter: function(el) { return ((funcGetAtt(el) != item) ^ _configNot); }, funcExec: funcExec },
-				'~=':       { funcFilter: function(el) { return ((funcGetAtt(el) || "").split(" ").contains(item) ^ _configNot); }, funcExec: funcExec },
-				'^=':       { funcFilter: function(el) { return ((funcGetAtt(el) || "").startsWith(item) ^ _configNot); }, funcExec: funcExec },
-				'$=':       { funcFilter: function(el) { return ((funcGetAtt(el) || "").endsWith(item) ^ _configNot); }, funcExec: funcExec },
-				'|=':       { funcFilter: function(el) { return ((funcGetAtt(el) || "").startsWith(item + '-') ^ _configNot); }, funcExec: funcExec },
-				'*=':       { funcFilter: function(el) { return (((funcGetAtt(el) || "").indexOf(item) > -1) ^ _configNot); }, funcExec: funcExec },
-				'hasAtt':   { funcFilter: function(el) { return (!!funcGetAtt(el) ^ _configNot); }, funcExec: funcExec },
-				'tagName':  { funcFilter: function(el) { return ((el.tagName.toLowerCase() === item) ^ _configNot); }, 
-							  funcExec:   function(el) { return el.getElementsByTagName(item).toArray(); } },
-				"funcAtt":  { funcFilter: function(el) { 
-								return el.getAttribute(funcGetAtt) == item || el.getAllParents().filter(function(e) { 
-									return e.getAttribute(funcGetAtt) == item; 
-								}).length > 0; 
-							  }, 
-							  funcExec:   function(el) { 
-								return el.getElementsByTagName("*").toArray().filter(function(e) { 
-									return !e.getAttribute(funcGetAtt) || e.getAttribute(funcGetAtt) == item; 
-								}); 
-							  } }   
-			},
-			mapType = {
-				"even":          { funcFilter: function(el) { return el.tagName === "TR" && (!(el.rowIndex % 2) ^ _configNot); }, funcExec: funcExec },
-				"odd":           { funcFilter: function(el) { return el.tagName === "TR" && ((el.rowIndex % 2) ^ _configNot); }, funcExec: funcExec },
-				"first-child":   { funcFilter: function(el) { return (el.parentNode.firstElement() === el) ^ _configNot; }, funcExec: funcExec },
-				"first-of-type": { funcFilter: function(el) { return (el.parentNode.getElement(">" + el.tagName)[0] === el) ^ _configNot; }, funcExec: funcExec },
-				"last-child":    { funcFilter: function(el) { return (el.parentNode.lastElement() === el) ^ _configNot; }, funcExec: funcExec },
-				"last-of-type":  { funcFilter: function(el) { 
-									var elTypes = el.parentNode.getElement(">" + el.tagName); 
-									return (elTypes[elTypes.length - 1] === el) ^ _configNot; 
-								   }, funcExec: funcExec },
-				"only-child":    { funcFilter: function(el) { return (el.parentNode.firstElement() === el && el.parentNode.children.length === 1) ^ _configNot; }, funcExec: funcExec },
-				"only-of-type":  { funcFilter: function(el) { 
-									var elTypes = el.parentNode.getElement(">" + el.tagName); 
-									return (elTypes[0] === el && elTypes.length === 1) ^ _configNot; 
-								   }, funcExec: funcExec },
-				"header":        { funcFilter: function(el) { return !!el.tagName.match(/H\d/g) ^ _configNot; }, funcExec: funcExec },
-				"empty":         { funcFilter: function(el) { return (el.innerHTML === "") ^ _configNot; }, funcExec: funcExec },
-				"parent":        { funcFilter: function(el) { return (el.innerHTML !== "") ^ _configNot; }, funcExec: funcExec },
-				"input":         { funcFilter: function(el) { return (inputsTagNames.indexOf(el.tagName) > -1) ^ _configNot; }, funcExec: funcExec },
-				"hidden":        { funcFilter: function(el) { return el.hidden ^ _configNot; }, funcExec: funcExec },
-				"visible":       { funcFilter: function(el) { return !el.hidden ^ _configNot; }, funcExec: funcExec },
-				"enabled":       { funcFilter: function(el) { return !el.disabled ^ _configNot; }, funcExec: funcExec },
-				"disabled":      { funcFilter: function(el) { return el.disabled ^ _configNot; }, funcExec: funcExec },
-				"selected":      { funcFilter: function(el) { return el.tagName === "OPTION" && (el.selected ^ _configNot); }, funcExec: funcExec },
-				"checked":       { funcFilter: function(el) { return el.tagName === "INPUT" && (el.checked ^ _configNot); }, funcExec: funcExec }
-				//"animated":    { funcFilter: function(el) { return ((funcGetAtt(el) == item) ^ _configNot); }, funcExec: funcExec }   
-			},
-			mapFuncType = {
-				// "nth-child":        { funcFilter: function(el) { return true; }, funcExec: funcExec },
-				// "nth-last-child":   { funcFilter: function(el) { return true; }, funcExec: funcExec },
-				// "nth-of-type":      { funcFilter: function(el) { return true; }, funcExec: funcExec },
-				// "nth-last-of-type": { funcFilter: function(el) { return true; }, funcExec: funcExec },
-				// "eq":               { funcFilter: function(el) { return true; }, funcExec: funcExec },
-				// "gt":               { funcFilter: function(el) { return true; }, funcExec: funcExec },
-				// "lt":               { funcFilter: function(el) { return true; }, funcExec: funcExec },
-				// "contains":         { funcFilter: function(el) { return true; }, funcExec: funcExec },
-				// "has":              { funcFilter: function(el) { return true; }, funcExec: funcExec },                   
-				// "lang":             { funcFilter: function(el) { return true; }, funcExec: funcExec }
-			},
-			mapMap = {
-				"parent":   function(el) { return el.parentElement; },
-				"suceded":  function(el) { return el.getNextElement(); },
-				"preceded": function(el) { return el.getPreviousElement(); }
-			},
-			getElement;
-			
-		mapFunc[selectorMapper.CLASS] = { funcFilter: function(el) { return (el.hasClass(item) ^ _configNot); },
-										  funcExec:   function(el) { return el.getElementsByClassName(item).toArray(); } };
+let X, Xand, Xandelier;
+X = Xand = Xandelier = (function () {
+    const X = (function () {
+        var initialElement = null,
+            selectorMapper = {
+                ID: '#', CHILDREN: '>', PRECEDED: '~', OR: '|', ALLCHILDREN: ' ', VDOM: '§', ALL: '*',
+                CLASS: '.', PARENT: '<', SUCEDED: '+', AND: ',', NOT: '!', NAME: '$', TYPE: ':'
+            },
+            regexQuery = new RegExp(`[\\w\\-]+(\\([\\w\\-]+\\))?|\\${selectorMapper.ID}|\\${selectorMapper.CLASS}|\\[\\${selectorMapper.VDOM}?[\\w\\s\\-\\<\\>\\~\\!\\|\\^\\$\\*\\=]+|\\]|\\${selectorMapper.ALL}|\\${selectorMapper.NAME}|\\${selectorMapper.ALLCHILDREN}|\\${selectorMapper.OR}|\\${selectorMapper.NOT}|\\${selectorMapper.AND}|\\${selectorMapper.CHILDREN}|\\${selectorMapper.PARENT}|\\${selectorMapper.SUCEDED}|\\${selectorMapper.PRECEDED}|\\${selectorMapper.TYPE}`, 'g'),
+            /* /[\w\-]+(\([\w\-]+\))?|\#|\.|\[\§?[\w\s\-\<\>\~\!\|\^\$\*\=]+|\]|\*|\$|\ |\||\!|\,|\>|\<|\+|\~|\:/g */
+            regexAttOp = new RegExp(`\\${selectorMapper.VDOM}|[\\w\\s\\-]+|[\\<\\>\\~\\!\\|\\^\\$\\*\\=]+`, 'g'),
+            /* /\§|[\w\s\-]+|[\<\>\~\!\|\^\$\*\=]+/g */
+            regexType = /[\w\-]+|\(|[\w\-]+|\)/g,
+            inputsTagNames = ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'],
+            funcGetAtt = null,
+            item = null,
+            _configNot = false,
+            funcExec = function (el) { return el.getElementsByTagName('*').toArray().filter(this.funcFilter); },
+            mapFunc = {
+                '=': { funcFilter: el => (funcGetAtt(el) == item) ^ _configNot, funcExec },
+                '<': { funcFilter: el => (parseFloat(funcGetAtt(el)) < parseFloat(item)) ^ _configNot, funcExec },
+                '>': { funcFilter: el => (parseFloat(funcGetAtt(el)) > parseFloat(item)) ^ _configNot, funcExec },
+                '<=': { funcFilter: el => (parseFloat(funcGetAtt(el)) <= parseFloat(item)) ^ _configNot, funcExec },
+                '>=': { funcFilter: el => (parseFloat(funcGetAtt(el)) >= parseFloat(item)) ^ _configNot, funcExec },
+                '!=': { funcFilter: el => (funcGetAtt(el) != item) ^ _configNot, funcExec },
+                '~=': { funcFilter: el => (funcGetAtt(el) || '').split(' ').contains(item) ^ _configNot, funcExec },
+                '^=': { funcFilter: el => (funcGetAtt(el) || '').startsWith(item) ^ _configNot, funcExec },
+                '$=': { funcFilter: el => (funcGetAtt(el) || '').endsWith(item) ^ _configNot, funcExec },
+                '|=': { funcFilter: el => (funcGetAtt(el) || '').startsWith(`${item}-`) ^ _configNot, funcExec },
+                '*=': { funcFilter: el => ((funcGetAtt(el) || '').includes(item)) ^ _configNot, funcExec },
+                'hasAtt': { funcFilter: el => (!!funcGetAtt(el) ^ _configNot), funcExec },
+                'tagName': {
+                    funcFilter: el => ((el.tagName.toLowerCase() === item) ^ _configNot),
+                    funcExec: el => el.getElementsByTagName(item).toArray()
+                },
+                'funcAtt': {
+                    funcFilter: el => el.getAttribute(funcGetAtt) == item || el.getAllParents().find(e => e.getAttribute(funcGetAtt) == item),
+                    funcExec: el => el.getElementsByTagName('*').toArray().filter(e => !e.getAttribute(funcGetAtt) || e.getAttribute(funcGetAtt) == item)
+                }
+            },
+            mapType = {
+                'even': { funcFilter: el => el.tagName === 'TR' && (!(el.rowIndex % 2) ^ _configNot), funcExec },
+                'odd': { funcFilter: el => el.tagName === 'TR' && ((el.rowIndex % 2) ^ _configNot), funcExec },
+                'first-child': { funcFilter: el => (el.parentNode.firstElement() === el) ^ _configNot, funcExec },
+                'first-of-type': { funcFilter: el => (el.parentNode.getElement(`>${el.tagName}`)[0] === el) ^ _configNot, funcExec },
+                'last-child': { funcFilter: el => (el.parentNode.lastElement() === el) ^ _configNot, funcExec },
+                'last-of-type': {
+                    funcFilter: function (el) {
+                        let elTypes = el.parentNode.getElement(`>${el.tagName}`);
+                        return (elTypes[elTypes.length - 1] === el) ^ _configNot;
+                    }, funcExec
+                },
+                'only-child': { funcFilter: el => (el.parentNode.firstElement() === el && el.parentNode.children.length === 1) ^ _configNot, funcExec },
+                'only-of-type': {
+                    funcFilter: function (el) {
+                        let elTypes = el.parentNode.getElement(`>${el.tagName}`);
+                        return (elTypes[0] === el && elTypes.length === 1) ^ _configNot;
+                    }, funcExec
+                },
+                'header': { funcFilter: el => !!el.tagName.match(/H\d/g) ^ _configNot, funcExec },
+                'empty': { funcFilter: el => (el.innerHTML === '') ^ _configNot, funcExec },
+                'parent': { funcFilter: el => (el.innerHTML !== '') ^ _configNot, funcExec },
+                'input': { funcFilter: el => inputsTagNames.includes(el.tagName) ^ _configNot, funcExec },
+                'hidden': { funcFilter: el => el.hidden ^ _configNot, funcExec },
+                'visible': { funcFilter: el => !el.hidden ^ _configNot, funcExec },
+                'enabled': { funcFilter: el => !el.disabled ^ _configNot, funcExec },
+                'disabled': { funcFilter: el => el.disabled ^ _configNot, funcExec },
+                'selected': { funcFilter: el => el.tagName === 'OPTION' && (el.selected ^ _configNot), funcExec },
+                'checked': { funcFilter: el => el.tagName === 'INPUT' && (el.checked ^ _configNot), funcExec }
+                //'animated':    { funcFilter: el => ((funcGetAtt(el) == item) ^ _configNot), funcExec }   
+            },
+            mapFuncType = {
+                // 'nth-child':        { funcFilter: el => true, funcExec },
+                // 'nth-last-child':   { funcFilter: el => true, funcExec },
+                // 'nth-of-type':      { funcFilter: el => true, funcExec },
+                // 'nth-last-of-type': { funcFilter: el => true, funcExec },
+                // 'eq':               { funcFilter: el => true, funcExec },
+                // 'gt':               { funcFilter: el => true, funcExec },
+                // 'lt':               { funcFilter: el => true, funcExec },
+                // 'contains':         { funcFilter: el => true, funcExec },
+                // 'has':              { funcFilter: el => true, funcExec },                   
+                // 'lang':             { funcFilter: el => true, funcExec }
+            },
+            mapMap = {
+                parent: el => el.parentElement,
+                suceded: el => el.getNextElement(),
+                preceded: el => el.getPreviousElement()
+            },
+            getElement;
 
-		mapFunc[selectorMapper.NAME] =  { funcFilter: function(el) { return ((el.name === item) ^ _configNot); },
-										  funcExec:   function(el) { return (el.getElementsByName) ? el.getElementsByName(item).toArray() : funcExec(el); } };
-										  
-		mapFunc[selectorMapper.TYPE] =  { funcFilter: function(el) { return ((el.type === item) ^ _configNot); }, funcExec: funcExec };
-		
-		getElement = function (selectors, elements, config) {
-			var selector, 
-				arrayRegexAtt,
-				arrayRegexType,
-				funcExecFilter = null, 
-				alreadyPassedParents = [], 
-				elParentElement, 
-				resultElements;
-			try {               
-				initialElement = initialElement || (elements = elements || document);
-				if (!elements) return elements;
-				config = config || {};
-				if(elements.length === undefined) elements = [elements];
-				if(!selectors.length)
-					return (config._action === "children") ?
-						elements.reduce(function(array, el) { return array.concat(el.children.toArray()); }, []) :
-						mapMap.hasOwnProperty(config._action) ? 
-							elements.reduce(function(array, el) {
-								el = mapMap[config._action](el);
-								if(el) array.push(el);
-								return array;
-							}, []) : 
-							elements;
-								
-				selectors = (typeof selectors === "string") ? selectors.match(regexQuery) : selectors;
-				selector = selectors.shift();
-				
-				// debugger;
-				switch (selector) {
-					case selectorMapper.ALL: return getElement(selectors, elements.reduce(function(array, el) { return array.concat(el.getElementsByTagName("*").toArray()); }, []));
-					case selectorMapper.ALLCHILDREN: 
-						config._include = false;
-						return getElement(selectors, elements, config);
-					case selectorMapper.NOT:
-						if (elements[0].getElementById) 
-							elements = elements[0].getElementsByTagName("*").toArray();
-						_configNot = true;
-						return getElement(selectors, elements, config);
-					case selectorMapper.ID:       return getElement(selectors, initialElement.getElementById(selectors.shift()));
-					case selectorMapper.CHILDREN: return getElement(selectors, elements, { _action: "children" });
-					case selectorMapper.PARENT:   return getElement(selectors, elements, { _action: "parent" });
-					case selectorMapper.SUCEDED:  return getElement(selectors, elements, { _action: "suceded" });
-					case selectorMapper.PRECEDED: return getElement(selectors, elements, { _action: "preceded" });
-					case selectorMapper.AND:      return elements.concat(getElement(selectors, initialElement));
-					case selectorMapper.OR:       return (elements.length ? elements : false) || getElement(selectors, initialElement);
-					case selectorMapper.TYPE:
-						item = selectors.shift();   
-						switch(item) {
-							case "first": return elements[0];
-							case "last":  return elements[elements.length - 1];
-							case "focus": return initialElement.activeElement;
-							case "root":  return initialElement.documentElement;
-						}
-						funcExecFilter = mapType[item];
-						if(!funcExecFilter) {
-							arrayRegexType = item.match(regexType);
-							funcGetAtt = arrayRegexType[0];
-							funcExecFilter = mapFuncType[funcGetAtt];
-							if(funcExecFilter || funcGetAtt) {
-								if(arrayRegexType.pop() !== ')') throw "Os parentêses não foram fechados. Ex.: :funcao(valor)";
-								item = arrayRegexType[2];
-								if(!funcExecFilter) {
-									funcExecFilter = mapFunc["funcAtt"];
-									//selectors.unshift("*");	
-								}									
-							} else                              
-								funcExecFilter = mapFunc[selectorMapper.TYPE];
-						}
-						break;
-					case selectorMapper.CLASS: 
-					case selectorMapper.NAME: 
-						item = selectors.shift();         
-						break;
-					default:
-						if(selector[0] === '['){
-							if(selectors.shift() !== ']') throw "Os conchetes não foram fechados. Ex.: [atributo=valor]";
-							arrayRegexAtt = selector.match(regexAttOp);
-							funcGetAtt = (arrayRegexAtt[0] === selectorMapper.VDOM) ? 
-								(arrayRegexAtt.shift(), function (el) { return el.getVDOMAttribute(arrayRegexAtt[0]); }) : 
-								function (el) { return el.getAttribute(arrayRegexAtt[0]); };                        
-							selector = arrayRegexAtt[1] || "hasAtt";
-							item = arrayRegexAtt[2];
-						} else
-							item = selector.toLowerCase(); 
-						break;
-				};
-				
-				funcExecFilter = funcExecFilter || mapFunc[selector] || mapFunc["tagName"];
-				
-				if(config._include)
-					resultElements = elements.filter(funcExecFilter.funcFilter);
-				else if(config._action === "children")
-					resultElements = elements.reduce(function(array, el) { 
-						return array.concat(el.children.toArray().filter(funcExecFilter.funcFilter));
-					}, []);
-				else if(mapMap.hasOwnProperty(config._action))
-					resultElements = elements.reduce(function(array, el) {
-							el = mapMap[config._action](el);
-							if(el && funcExecFilter.funcFilter(el))
-								array.push(el);
-							return array;
-						}, []);
-				else
-					resultElements = elements.reduce(function(array, el) {
-							elParentElement = el.parentElement;
-							while(elParentElement) {
-								if(alreadyPassedParents.contains(elParentElement)) return array;
-								elParentElement = elParentElement.parentElement;
-							}
-							alreadyPassedParents.push(el);
-							return array.concat(funcExecFilter.funcExec(el));
-						}, []);
-				
-				_configNot = false;
+        mapFunc[selectorMapper.CLASS] = {
+            funcFilter: el => (el.classList.contains(item) ^ _configNot),
+            funcExec: el => el.getElementsByClassName(item).toArray()
+        };
 
-				return getElement(selectors, resultElements, { _include: true });
-			} finally {
-				initialElement = null;
-			}
-		};
-		
-		return getElement;
-	})();
-    	
+        mapFunc[selectorMapper.NAME] = {
+            funcFilter: el => ((el.name === item) ^ _configNot),
+            funcExec: el => (el.getElementsByName) ? el.getElementsByName(item).toArray() : funcExec(el)
+        };
+
+        mapFunc[selectorMapper.TYPE] = { funcFilter: el => ((el.type === item) ^ _configNot), funcExec };
+
+        getElement = function (selectors, elements, config = {}) {
+            var selector,
+                arrayRegexType,
+                funcExecFilter = null,
+                alreadyPassedParents = [],
+                elParentElement,
+                resultElements;
+            try {
+                initialElement = initialElement || (elements = elements || document);
+                if (!elements) return elements;
+                if (elements.length === undefined) elements = [elements];
+                if (!selectors.length)
+                    return (config._action === 'children') ?
+                        elements.reduce((array, el) => [...array, ...el.children], []) :
+                        mapMap.hasOwnProperty(config._action) ?
+                            elements.reduce(function (array, el) {
+                                let value = mapMap[config._action](el);
+                                if (value) array.push(value);
+                                return array;
+                            }, []) :
+                            elements;
+
+                selectors = (typeof selectors === 'string') ? selectors.match(regexQuery) : selectors;
+                selector = selectors.shift();
+
+                // debugger;
+                switch (selector) {
+                    case selectorMapper.ALL: return getElement(selectors, elements.reduce((array, el) => [...array, ...el.getElementsByTagName('*')], []));
+                    case selectorMapper.ALLCHILDREN:
+                        config._include = false;
+                        return getElement(selectors, elements, config);
+                    case selectorMapper.NOT:
+                        if (elements[0].getElementById)
+                            elements = elements[0].getElementsByTagName('*').toArray();
+                        _configNot = true;
+                        return getElement(selectors, elements, config);
+                    case selectorMapper.ID: return getElement(selectors, initialElement.getElementById(selectors.shift()));
+                    case selectorMapper.CHILDREN: return getElement(selectors, elements, { _action: 'children' });
+                    case selectorMapper.PARENT: return getElement(selectors, elements, { _action: 'parent' });
+                    case selectorMapper.SUCEDED: return getElement(selectors, elements, { _action: 'suceded' });
+                    case selectorMapper.PRECEDED: return getElement(selectors, elements, { _action: 'preceded' });
+                    case selectorMapper.AND: return [...elements, ...getElement(selectors, initialElement)];
+                    case selectorMapper.OR: return (elements.length ? elements : false) || getElement(selectors, initialElement);
+                    case selectorMapper.TYPE:
+                        item = selectors.shift();
+                        switch (item) {
+                            case 'first': return elements[0];
+                            case 'last': return elements[elements.length - 1];
+                            case 'focus': return initialElement.activeElement;
+                            case 'root': return initialElement.documentElement;
+                        }
+                        funcExecFilter = mapType[item];
+                        if (!funcExecFilter) {
+                            arrayRegexType = item.match(regexType);
+                            funcGetAtt = arrayRegexType[0];
+                            funcExecFilter = mapFuncType[funcGetAtt];
+                            if (funcExecFilter || funcGetAtt) {
+                                if (arrayRegexType.pop() !== ')') throw 'Os parentêses não foram fechados. Ex.: :funcao(valor)';
+                                item = arrayRegexType[2];
+                                if (!funcExecFilter) {
+                                    funcExecFilter = mapFunc['funcAtt'];
+                                    //selectors.unshift('*');	
+                                }
+                            } else
+                                funcExecFilter = mapFunc[selectorMapper.TYPE];
+                        }
+                        break;
+                    case selectorMapper.CLASS:
+                    case selectorMapper.NAME:
+                        item = selectors.shift();
+                        break;
+                    default:
+                        if (selector[0] === '[') {
+                            if (selectors.shift() !== ']') throw 'Os conchetes não foram fechados. Ex.: [atributo=valor]';
+                            let arrayRegexAtt = selector.match(regexAttOp);
+                            funcGetAtt = (arrayRegexAtt[0] === selectorMapper.VDOM) ?
+                                (arrayRegexAtt.shift(), el => el.getVDOMAttribute(arrayRegexAtt[0])) :
+                                el => el.getAttribute(arrayRegexAtt[0]);
+                            selector = arrayRegexAtt[1] || 'hasAtt';
+                            item = arrayRegexAtt[2];
+                        } else
+                            item = selector.toLowerCase();
+                        break;
+                };
+
+                funcExecFilter = funcExecFilter || mapFunc[selector] || mapFunc['tagName'];
+
+                if (config._include)
+                    resultElements = elements.filter(funcExecFilter.funcFilter);
+                else if (config._action === 'children')
+                    resultElements = elements.reduce((array, el) =>
+                        [...array, ...el.children.toArray().filter(funcExecFilter.funcFilter)], []);
+                else if (mapMap.hasOwnProperty(config._action))
+                    resultElements = elements.reduce(function (array, el) {
+                        el = mapMap[config._action](el);
+                        if (el && funcExecFilter.funcFilter(el))
+                            array.push(el);
+                        return array;
+                    }, []);
+                else
+                    resultElements = elements.reduce(function (array, el) {
+                        elParentElement = el.parentElement;
+                        while (elParentElement) {
+                            if (alreadyPassedParents.contains(elParentElement)) return array;
+                            elParentElement = elParentElement.parentElement;
+                        }
+                        alreadyPassedParents.push(el);
+                        return [...array, ...funcExecFilter.funcExec(el)];
+                    }, []);
+
+                _configNot = false;
+
+                return getElement(selectors, resultElements, { _include: true });
+            } finally {
+                initialElement = null;
+            }
+        };
+
+        return getElement;
+    })();
+
     //////////////////////////////////////////////UTILS////////////////////////////////////////////////
     {
         /*
@@ -640,102 +586,100 @@ var X, Xand, Xandelier;
                             responseText: (String) O que retornou do ajax;
         */
         X.Ajax = function (obAjax) {
-            var path = (window.rootUrl || "") + obAjax._path,
-                POST = obAjax._type === "POST",
-                _arguments, XDomainRequest = XDomainRequest || null,
-                obj = obAjax._arguments,            
-                xhttp, resultValue,
-                outputResult = function() {                 
-                    if (obAjax._done != undefined) {
+            const { _path, _type = 'GET', _dataType = 'json', _contentType = 'application/x-www-form-urlencoded; charset=UTF-8', _arguments, _done, _error } = obAjax,
+                path = (window.rootUrl || '') + _path,
+                isPost = _type === 'POST',
+                XDomainRequest = XDomainRequest || null,
+                outputResult = function () {
+                    if (_done != undefined) {
+                        let resultValue;
                         try {
                             resultValue = (JSON) ? JSON.parse(xhttp.responseText) : eval(xhttp.responseText);
                         } catch (e) {
                             resultValue = xhttp.responseText;
                         }
-                        obAjax._done(resultValue, xhttp);
+                        _done(resultValue, xhttp);
                     }
                 };
-            
-            if (typeof XMLHttpRequest === "undefined") {                
+
+            let finalArguments;
+
+            if (typeof XMLHttpRequest === 'undefined') {
                 XMLHttpRequest = XDomainRequest || function () {
-                    try { return new ActiveXObject("Msxml2.XMLHTTP.6.0"); } catch (e) {}
-                    try { return new ActiveXObject("Msxml2.XMLHTTP.3.0"); } catch (e) {}
-                    try { return new ActiveXObject("Microsoft.XMLHTTP"); } catch (e) {}
-                    throw "Esse browser não possui suporte para XMLHttpRequest.";
+                    try { return new ActiveXObject('Msxml2.XMLHTTP.6.0'); } catch (e) { }
+                    try { return new ActiveXObject('Msxml2.XMLHTTP.3.0'); } catch (e) { }
+                    try { return new ActiveXObject('Microsoft.XMLHTTP'); } catch (e) { }
+                    throw 'Esse browser não possui suporte para XMLHttpRequest.';
                 };
-            }       
-            
-            xhttp = new XMLHttpRequest();
-        
-            if (obj) {
-                switch (typeof obj) {
-                    case 'object':
-                        _arguments = Object.keys(obj).reduce(function(args, attr) {
-                            return args + (X.TypeOf(obj[attr]) === "array" ?
-                                obj[attr].reduce(function(indices, el) { return indices + attr + "=" + el + "&"; }, "") :
-                                attr + "=" + obj[attr] + "&")
-                            , POST ? "" : "?"; });
-                        break;
-                    case 'string': _arguments = (POST ? "" : "/") + obj; break;
-                    default: _arguments = obj; break;
-                }
-        
-                if (!POST) path += _arguments;
             }
-            
-            if(XDomainRequest)
+
+            const xhttp = new XMLHttpRequest();
+
+            if (_arguments) {
+                switch (typeof _arguments) {
+                    case 'object':
+                        finalArguments = Object.entries(_arguments).reduce((args, [key, value]) => {
+                            return args + (X.TypeOf(value) === 'array' ?
+                                value.reduce((indexes, el) => `${indexes}${key}=${el}&`, '') :
+                                `${key}=${value}&`), isPost ? '' : '?';
+                        });
+                        break;
+                    case 'string': finalArguments = (isPost ? '' : '/') + _arguments; break;
+                    default: finalArguments = _arguments; break;
+                }
+
+                if (!isPost) path += finalArguments;
+            }
+
+            if (XDomainRequest)
                 xhttp.onload = outputResult;
             else
                 xhttp.onreadystatechange = function () {
                     if (xhttp.readyState == 4) {
-                        if (xhttp.status == 200) 
+                        if (xhttp.status == 200)
                             outputResult();
                         else
-                            if (obAjax._error != undefined)
-                                obAjax._error(xhttp, xhttp.status, xhttp.responseText);
+                            xhttp.onerror();
                     }
                 }
-        
+
             xhttp.onerror = function () {
-                if (obAjax._error != undefined)
-                    obAjax._error(xhttp, xhttp.status, xhttp.responseText);
+                if (_error != undefined)
+                    _error(xhttp, xhttp.status, xhttp.responseText);
             }
-        
-            xhttp.open(obAjax._type || "GET", path);
-            if (POST) {
-                if (obAjax._dataType !== false) xhttp.setRequestHeader("Data-type", obAjax._dataType || 'json');
-                if (obAjax._contentType !== false)
-                    xhttp.setRequestHeader("Content-type",
-                        obAjax._contentType || 'application/x-www-form-urlencoded; charset=UTF-8');
-                xhttp.send(_arguments);
+
+            xhttp.open(_type, path);
+            if (isPost) {
+                if (_dataType !== false) xhttp.setRequestHeader('Data-type', _dataType);
+                if (_contentType !== false)
+                    xhttp.setRequestHeader('Content-type', _contentType);
+                xhttp.send(finalArguments);
             } else xhttp.send();
         };
-        
+
         /*
         Parametros:
             obj: Objeto enviado;
         Retorno: (String) O tipo do objeto em minúsuculo;
         */
-        X.TypeOf = function(obj) {
-            return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
-        };
-        
+        X.TypeOf = obj => ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
+
         /* Retorno: (String) O nome do browser atual em minúsuculo; */
-        X.GetBrowser = function() {
-            if (window.opera || navigator.userAgent.indexOf(' OPR/') >= 0)
+        X.GetBrowser = function () {
+            if (window.opera || navigator.userAgent.includes(' OPR/'))
                 // Opera 8.0+ (UA detection to detect Blink/v8-powered Opera)
-                return "opera";
+                return 'opera';
             if (typeof InstallTrigger !== 'undefined') // Firefox 1.0+
-                return "firefox";
-            if (Object.prototype.toString.call(window.HTMLElement).indexOf('Constructor') > 0)
-                // At least Safari 3+: "[object HTMLElementConstructor]"
-                return "safari";
+                return 'firefox';
+            if (Object.prototype.toString.call(window.HTMLElement).includes('Constructor'))
+                // At least Safari 3+: '[object HTMLElementConstructor]'
+                return 'safari';
             if (window.chrome) // Chrome 1+
-                return "chrome";
+                return 'chrome';
             if (document.documentMode) // At least IE6
-                return "ie";
+                return 'ie';
         };
-        
+
         /*
         Parametros:
             obj: Objeto com as configurações do processamento:
@@ -745,69 +689,68 @@ var X, Xand, Xandelier;
                 _process: (Function) Função que na qual os elementos do array serão processados;
                 _done: (Function) Função a ser executada após o término do processamento;
         */
-        X.ProcessArray = function(obj) {
+        X.ProcessArray = function (obj) {
             setTimeout(function () {
                 if (obj._percent)
                     X.PercentageRender(obj._percent, 100 - ((obj._array.length * 100) / obj._length));
-                (obj._array.splice(0, Math.ceil(obj._length * 0.1))).forEach(function(x) { return obj._process(x); });
+                (obj._array.splice(0, Math.ceil(obj._length * 0.1))).forEach(x => obj._process(x));
                 if (obj._array.length > 0)
                     setTimeout(X.ProcessArray(obj));
                 else if (obj._done)
                     obj._done();
             });
         };
-        
+
         /* Retorno: (String) Uma cor randomica em Hexadecimal; */
-        X.RandomColor = function() {
-            return '#' + Math.floor(Math.random() * 16777215).toString(16);
-        };
-        
+        X.RandomColor = () =>
+            `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+
         /*
         Parametros: 
             func: (Function) Função que irá ocorrer o teste de velocidade;
             params: (Array) Array com os parametros da função à ser testada;
         Retorno: (Float) O tempo em segundos de que demorou para executar 1000 interção da função enviada;
         */
-        X.SpeedTest = function(func, params) {
-            var start = performance.now() /*start timestamp*/, i;
-            for (i = 0; i < 1000; i++)
+        X.SpeedTest = function (func, params) {
+            const start = performance.now(); // start timestamp
+            for (let i = 0; i < 1000; i++)
                 params ? func.apply(null, params) : func();
-            return performance.now() - start;/*end timestamp*/
+            return performance.now() - start; // end timestamp
         };
-            
+
         /*
         Parametros: 
             str: (String) String a ser permutada;
         Retorno: (Array[String]) Array de Strings com todas possíveis combinações de caracteres da String enviada;
         */
-        X.Permutations = function(str) {
-            var fn = function(start, active){
-                if ( active.length === 1 )
-                    return [ start + active ];
+        X.Permutations = function (str) {
+            const fn = function (start, active) {
+                if (active.length === 1)
+                    return [start + active];
                 else {
-                    var returnResult = [], i, result;
-                    for (i = 0; i < active.length; i++) {
-                        result = fn(active[i], active.substr(0, i) + active.substr(i+1));
-                        result.forEach(function(x) { 
+                    const returnResult = [];
+                    for (let i = 0; i < active.length; i++) {
+                        const result = fn(active[i], active.substr(0, i) + active.substr(i + 1));
+                        result.forEach(function (x) {
                             returnResult.push(start + x);
                         });
                     }
                     return returnResult;
                 }
             }
-            return fn("",str);
+            return fn('', str);
         };
-        
+
         /*
         Parametros: 
             n: (Int) Número a ser fatoriado;
         Retorno: (Int) Número fatorado;
         */
-        X.Factorial = function(n) {
+        X.Factorial = function (n) {
             return n ? n * X.Factorial(n - 1) : 1;
         };
     }
-    	
+
     /////////////////////////////////////////////ELEMENTS//////////////////////////////////////////////
     {
         /*
@@ -818,66 +761,68 @@ var X, Xand, Xandelier;
             delay:   (Float) Tempo em ms para mostrar ou esconder o Elemento;
         */
         X.Show = (function () {
-            var valueShowBool = false,
+            let valueShowBool = false,
                 sameElement = {};
             return function (element, show, delay) {
                 valueShowBool = show;
-                sameElement = element = 
-                    typeof element === "string" ? document.getElementById(element) : element;
-                
+                sameElement = element =
+                    typeof element === 'string' ? document.getElementById(element) : element;
+
                 if (show === undefined) return element.style.display;
                 if (delay === undefined) element.style.display = show ? 'block' : 'none';
                 else {
                     sameElement = {};
-                    var op = valueShowBool ? 0.1 : 1 /*opacidade inicial*/, timer;
-                    element.config({ style: { display: (show ? 'block' : 'none'), opacity: op } });
-                    timer = setInterval(function () {
-                        if (op > 1 || op < 0.1) {
+                    let opacity = valueShowBool ? 0.1 : 1; // opacidade inicial
+                    element.config({ style: { display: (show ? 'block' : 'none'), opacity } });
+                    const timer = setInterval(function () {
+                        if (opacity > 1 || opacity < 0.1) {
                             clearInterval(timer);
                             element.style.display = show ? 'block' : 'none';
                         } else if (sameElement.id === element.id) {
                             clearInterval(timer);
                             element.style.display = valueShowBool ? 'block' : 'none';
                         }
-                        element.config({ style: { opacity: op, filter: 'alpha(opacity=' + op * 100 + ")" } });
-                        op = op + (op * 0.1) * (show ? 1 : -1);
+                        element.config({ style: { opacity, filter: `alpha(opacity=${opacity * 100})` } });
+                        opacity = opacity + (opacity * 0.1) * (show ? 1 : -1);
                     }, delay);
                 }
             };
         })();
-            
+
         /*
         Parametros:
             tagName: (String) Tag do novo elemento;
             config:  (Objeto) Objeto com as configurações do Elemento (ver config);  
         Retorno: (Element) Elemento;
         */
-        X.CreateElement = function(tagName, config) { 
+        X.CreateElement = function (tagName, config) {
             return document.createElement(tagName).config(config);
         };
-        
+
         /*
         Parametros:
             idProcess: (String OU HtmlElement) String com o id do Progress Bar OU o Progress Bar;
             value: (Float) Porcentagem do Progress Bar;
         Retorno: (Element) Progress Bar;
         */
-        X.PercentageRender = function(element, value) {
-            element = typeof element === "string" ? document.getElementById(element) : element;
+        X.PercentageRender = function (element, value) {
+            element = typeof element === 'string' ? document.getElementById(element) : element;
             element.config({
-                Swidth: value + "%", innerHTML: Math.round(value) + "%", "Aaria-valuenow": value
+                Swidth: `${value}%`,
+                innerHTML: `${Math.round(value)}%`,
+                'Aaria-valuenow': value
             });
             return element;
-        };      
-                        
+        };
+
         /*
         Parametros:
             layoutPath: (String) Caminho do layout original;
             containerId: (String) Id do container dentro do layout original que será renderizado conteúdo da página atual;
             callback: (Função) Função de callback após renderizar o layout;
         */
-        X.SetLayout = function(layoutPath, containerId, callback) {
-            var containerContent = document.documentElement.innerHTML, err;
+        X.SetLayout = function (layoutPath, containerId, callback) {
+            const containerContent = document.documentElement.innerHTML;
             X.Ajax({
                 _path: layoutPath,
                 _done: function (data) {
@@ -887,194 +832,195 @@ var X, Xand, Xandelier;
                         callback();
                 },
                 _error: function (request, textStatus, error) {
-                    err = textStatus + ", " + error;
-                    console.log("Request Failed: " + err);
+                    console.log(`Request Failed: ${textStatus}, ${error}`);
                 }
             });
         };
-        
+
         X.Modal = (function () {
             var element = null,
                 _modalDelay = 5,
                 _clickOut = null,
-                _divNone = X.CreateElement("DIV", { Sdisplay: "none" }),
-                _divBackdrop = X.CreateElement("DIV").addClass("modal-backdrop fade in"),
+                _divNone = X.CreateElement('DIV', { Sdisplay: 'none' }),
+                _divBackdrop = X.CreateElement('DIV').classList.add('modal-backdrop', 'fade', 'in'),
                 _configConfig = function (_modalConfigAx, att, value) {
                     if (_modalConfigAx[att] === undefined) return { className: value }
                     if (_modalConfigAx[att] === false) return {};
-                    
+
                     _modalConfigAx[att].className = (_modalConfigAx[att].className) ?
-                        value + " " + _modalConfigAx[att].className : value;
+                        `${value} ${_modalConfigAx[att].className}` : value;
                     return _modalConfigAx[att];
                 },
                 _clickOutsideModal = function (e) {
-                    if (e.target.hasClass("modal fade in")) {
+                    if (e.target.classList.contains('modal fade in')) {
                         e.target.Toggle(false);
                         if (_clickOut) _clickOut();
                     }
                 },
-                closeModal = function() {
+                closeModal = function () {
                     element.Toggle(false);
                 },
-                Toggle = function (content, toggleConfig) {
-                    if(content === undefined) content = !this.IsShown;
+                Toggle = function (content, toggleConfig = {}) {
+                    if (content === undefined) content = !this.IsShown;
                     this.IsShown = !!content;
-                    if (!document.body.hasClass("modal-open")) { //if para verificar data-toggle
-                        toggleConfig = toggleConfig || {};
-                        X.Show(this[(content ? "add" : "remove") + "Class"]("in"), content, toggleConfig._delay || _modalDelay);
+                    if (!document.body.classList.contains('modal-open')) { //if para verificar data-toggle
+                        X.Show(this.classList[content ? 'add' : 'remove']('in'), content, toggleConfig._delay || _modalDelay);
                         if (toggleConfig._clickOut !== false) {
                             if (content) _clickOut = toggleConfig._clickOut;
-                            document.body[(content ? "add" : "remove") + "EventListener"]('click', _clickOutsideModal);
+                            document.body[`${content ? 'add' : 'remove'}EventListener`]('click', _clickOutsideModal);
                         }
-                        document.body[(content ? "append" : "remove") + "Child"](_divBackdrop);
-                    } else document.body.removeClass("modal-open");
+                        document.body[`${content ? 'add' : 'remove'}Child`](_divBackdrop);
+                    } else document.body.classList.remove('modal-open');
                     if (!content && this.onHideModal) this.onHideModal();
                 },
-                createModal = function (id, modalConfig) {              
-                    modalConfig = modalConfig || {};
-        
-                    modalConfig._XBtn = modalConfig._XBtn === undefined ? "x" : modalConfig._XBtn;
+                createModal = function (id, modalConfig = {}) {
+                    modalConfig._XBtn = modalConfig._XBtn === undefined ? 'x' : modalConfig._XBtn;
                     modalConfig._XBtn = modalConfig._XBtn === false ? _divNone :
                         X.CreateElement('BUTTON', {
-                            className: "close", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: modalConfig._XBtn
+                            className: 'close',
+                            Fclick: closeModal,
+                            'Adata-dismiss': 'modal',
+                            innerHTML: modalConfig._XBtn
                         });
-        
+
                     modalConfig._head = modalConfig._head || _divNone;
                     modalConfig._body = modalConfig._body || _divNone;
-        
+
                     modalConfig._foot = modalConfig._foot === undefined ?
                         X.CreateElement('BUTTON', {
-                            className: "btn btn-default", Fclick: closeModal, "Adata-dismiss": "modal", innerHTML: "Fechar"
+                            className: 'btn btn-default',
+                            Fclick: closeModal,
+                            'Adata-dismiss': 'modal',
+                            innerHTML: 'Fechar'
                         }) : modalConfig._foot || _divNone;
-        
+
                     element = document.body
-                        .appendChild(X.CreateElement('DIV', { id: id, className: "modal fade" })
-                            .append(X.CreateElement('DIV', _configConfig(modalConfig, "_configDialog", "modal-dialog"))
-                                .append(X.CreateElement('DIV', _configConfig(modalConfig, "_configContent", "modal-content"))
-                                    .append(X.CreateElement('DIV', _configConfig(modalConfig, "_configHead", "modal-header"))
+                        .appendChild(X.CreateElement('DIV', { id, className: 'modal fade' })
+                            .append(X.CreateElement('DIV', _configConfig(modalConfig, '_configDialog', 'modal-dialog'))
+                                .append(X.CreateElement('DIV', _configConfig(modalConfig, '_configContent', 'modal-content'))
+                                    .append(X.CreateElement('DIV', _configConfig(modalConfig, '_configHead', 'modal-header'))
                                         .append(modalConfig._XBtn)
-                                        .append(X.CreateElement('H4', _configConfig(modalConfig, "_configTitle", "modal-title")))
+                                        .append(X.CreateElement('H4', _configConfig(modalConfig, '_configTitle', 'modal-title')))
                                         .append(modalConfig._head))
-                                    .append(X.CreateElement('DIV', _configConfig(modalConfig, "_configBody", "modal-body"))
+                                    .append(X.CreateElement('DIV', _configConfig(modalConfig, '_configBody', 'modal-body'))
                                         .append(modalConfig._body))
-                                    .append(X.CreateElement('DIV', _configConfig(modalConfig, "_configFoot", "modal-footer"))
+                                    .append(X.CreateElement('DIV', _configConfig(modalConfig, '_configFoot', 'modal-footer'))
                                         .append(modalConfig._foot)
                                     )
                                 )
                             )
                         );
-                        
-                    element.config({ Toggle: Toggle, IsShown: false, ModalConfiguration: modalConfig });
-                    
+
+                    element.config({ Toggle, IsShown: false, ModalConfiguration: modalConfig });
+
                     return element;
-                };          
-            
+                };
+
             return createModal;
         })();
-        
-        X.Modal.Alert = (function() {
+
+        X.Modal.Alert = (function () {
             var _alertModal = null,
-                _alertName = "alertXModal";
-            
+                _alertName = 'alertXModal';
+
             return function (text) {
                 if (_alertModal !== null)
-                    _alertModal.getElementsByTagName("label")[0].innerHTML = text;
+                    _alertModal.getElementsByTagName('label')[0].innerHTML = text;
                 else
                     _alertModal = X.Modal(_alertName, {
-                        _configContent: { style: { width: "50%", margin: "0px auto 0px auto" } },
-                        _configHead: { style: { border: "none" } },
-                        _configFoot: { style: { border: "none", marginTop: "0px" } },
-                        _body: X.CreateElement("LABEL", { innerHTML: text }),
+                        _configContent: { style: { width: '50%', margin: '0px auto 0px auto' } },
+                        _configHead: { style: { border: 'none' } },
+                        _configFoot: { style: { border: 'none', marginTop: '0px' } },
+                        _body: X.CreateElement('LABEL', { innerHTML: text }),
                         _foot: X.CreateElement('BUTTON', {
-                            Fclick: function() { return _alertModal.Toggle(false); },
-                            innerHTML: "OK", className: "btn btn-default"
+                            Fclick: () => _alertModal.Toggle(false),
+                            innerHTML: 'OK', className: 'btn btn-default'
                         })
                     });
-            
+
                 _alertModal.Toggle(true, { _clickOut: true });
                 return _alertModal;
             };
         })();
-        
-        X.Modal.Confirm = (function() {
+
+        X.Modal.Confirm = (function () {
             var _confirmModal = null,
-                _confirmName = "confirmXModal",
-                _okClick = null, 
+                _confirmName = 'confirmXModal',
+                _okClick = null,
                 _cancelClick = null;
-            
-            return function (text, func, footConfig) {
-                footConfig = footConfig || {};
+
+            return function (text, func, footConfig = {}) {
                 if (_confirmModal !== null) {
-                    _confirmModal.getElementsByTagName("button")[0].removeEventListener("click", _okClick);
-                    _confirmModal.getElementsByTagName("button")[1].removeEventListener("click", _cancelClick);
+                    _confirmModal.getElementsByTagName('button')[0].removeEventListener('click', _okClick);
+                    _confirmModal.getElementsByTagName('button')[1].removeEventListener('click', _cancelClick);
                 } else
                     _confirmModal = X.Modal(_confirmName, {
                         _XBtn: false,
-                        _configHead: { Sdisplay: "none" },
-                        _body: X.CreateElement("LABEL"),
+                        _configHead: { Sdisplay: 'none' },
+                        _body: X.CreateElement('LABEL'),
                         _foot: X.CreateElement('DIV')
                             .append(X.CreateElement('BUTTON', footConfig._okButton || {
-                                innerHTML: "OK", className: "btn btn-default"
+                                innerHTML: 'OK', className: 'btn btn-default'
                             }))
                             .append(X.CreateElement('BUTTON', footConfig._cancelButton || {
-                                innerHTML: "Cancela", className: "btn btn-default"
+                                innerHTML: 'Cancela', className: 'btn btn-default'
                             }))
                     });
-    
-                _confirmModal.getElementsByTagName("LABEL")[0].innerHTML = text;
-                _okClick = function () { 
-                    _confirmModal.Toggle(false); 
-                    func(true); 
+
+                _confirmModal.getElementsByTagName('LABEL')[0].innerHTML = text;
+                _okClick = function () {
+                    _confirmModal.Toggle(false);
+                    func(true);
                 };
-                _confirmModal.getElementsByTagName("button")[0].addEventListener("click", _okClick);
-                _cancelClick = function () { 
-                    _confirmModal.Toggle(false); 
-                    func(false); 
+                _confirmModal.getElementsByTagName('button')[0].addEventListener('click', _okClick);
+                _cancelClick = function () {
+                    _confirmModal.Toggle(false);
+                    func(false);
                 };
-                _confirmModal.getElementsByTagName("button")[1].addEventListener("click", _cancelClick);
-    
+                _confirmModal.getElementsByTagName('button')[1].addEventListener('click', _cancelClick);
+
                 _confirmModal.Toggle(true);
                 return _confirmModal;
-            };                
+            };
         })();
-        
-        X.Modal.Prompt = (function() {
+
+        X.Modal.Prompt = (function () {
             var _promptModal = null,
-                _promptName = "promptXModal",
+                _promptName = 'promptXModal',
                 _promptFunc = null;
-                
+
             return function (text, func) {
                 if (_promptModal !== null)
-                    _promptModal.getElementsByTagName("button")[0].removeEventListener("click", _promptFunc);
+                    _promptModal.getElementsByTagName('button')[0].removeEventListener('click', _promptFunc);
                 else
                     _promptModal = X.Modal(_promptName, {
                         _foot: false, _XBtn: false, _head: false,
-                        _configHead: { style: { display: "none" } },
-                        _configBody: { style: { paddingTop: "none" } },
+                        _configHead: { style: { display: 'none' } },
+                        _configBody: { style: { paddingTop: 'none' } },
                         _body: X.CreateElement('DIV')
-                        .append(X.CreateElement("LABEL")).append(X.CreateElement("BR"))
-                        .append(X.CreateElement('DIV', { className: "input-group" })
-                            .append(X.CreateElement("INPUT", { type: "text", className: "form-control", SmaxWidth: "none" }))
-                            .append(X.CreateElement("SPAN", { className: "input-group-btn" })
-                                .append(X.CreateElement("BUTTON", {
-                                    className: "btn btn-defaul", type: "button", innerHTML: "OK", Sborder: "none"
-                                }))
-                            )),
-                        _configFoot: { style: { display: "none" } }
+                            .append(X.CreateElement('LABEL')).append(X.CreateElement('BR'))
+                            .append(X.CreateElement('DIV', { className: 'input-group' })
+                                .append(X.CreateElement('INPUT', { type: 'text', className: 'form-control', SmaxWidth: 'none' }))
+                                .append(X.CreateElement('SPAN', { className: 'input-group-btn' })
+                                    .append(X.CreateElement('BUTTON', {
+                                        className: 'btn btn-defaul', type: 'button', innerHTML: 'OK', Sborder: 'none'
+                                    }))
+                                )),
+                        _configFoot: { style: { display: 'none' } }
                     });
-    
-                _promptModal.getElementsByTagName("label")[0].innerHTML = text;
-                _promptModal.getElementsByTagName("input")[0].value = "";
+
+                _promptModal.getElementsByTagName('label')[0].innerHTML = text;
+                _promptModal.getElementsByTagName('input')[0].value = '';
                 _promptFunc = function () {
                     _promptModal.Toggle(false);
-                    func(_promptModal.getElementsByTagName("input")[0].value);
+                    func(_promptModal.getElementsByTagName('input')[0].value);
                 };
-                _promptModal.getElementsByTagName("button")[0].addEventListener("click", _promptFunc);
+                _promptModal.getElementsByTagName('button')[0].addEventListener('click', _promptFunc);
                 _promptModal.Toggle(true);
                 return _promptModal;
-            };              
+            };
         })();
-            
+
         /*
         Construtor:
             titleConfig: (Objeto) Objeto com as configurações do Title:
@@ -1082,195 +1028,187 @@ var X, Xand, Xandelier;
                 _delay: (Float) Tempo em milisegundos de fade-in do Title. Default: 20;
                 _name: (String) Nome do atributo e do id do Elemento do Title. Default: personalizeTitle;
         */
-        X.Title = function (titleConfig) {
-            var _titleName = "personalizeTitle",
+        X.Title = function (titleConfig = {}) {
+            var _titleName = 'personalizeTitle',
                 _titleEl = null,
                 _titleDelay = 20,
                 _titleStyle = {
-                    padding: "3px",
-                    border: "1px solid black",
-                    "border-radius": "5px",
-                    "box-shadow": "2px 2px 5px grey",
-                    background: "white",
-                    color: "black",
-                    font: "normal 11px Verdana",
-                    "text-align": "left",
-                    position: "absolute",
-                    "z-index": 1000
-                }, 
-                getPlace = function(evt) {
-                    return _titleEl.config({ style: { left: (evt.pageX + 12) + "px", top: (evt.pageY + 20) + "px" }});
+                    padding: '3px',
+                    border: '1px solid black',
+                    'border-radius': '5px',
+                    'box-shadow': '2px 2px 5px grey',
+                    background: 'white',
+                    color: 'black',
+                    font: 'normal 11px Verdana',
+                    'text-align': 'left',
+                    position: 'absolute',
+                    'z-index': 1000
+                },
+                getPlace = function (evt) {
+                    return _titleEl.config({ style: { left: `${evt.pageX + 12}px`, top: `${evt.pageY + 20}px` } });
                 },
                 showTitle = function (text) {
                     X.Show(_titleEl, true, _titleDelay);
                     _titleEl.innerHTML = text;
-                }, 
+                },
                 hideTitle = function () {
                     X.Show(_titleEl, false);
-                    _titleEl.innerHTML = "";
-                }; 
-                
+                    _titleEl.innerHTML = '';
+                };
+
             //Renderiza o Title.
             this.RenderTitle = function () {
                 X.Show(_titleEl, false);
-                X("[title]").forEach(function (el) {
+                X('[title]').forEach(function (el) {
                     el.setAttribute(_titleName, el.title);
-                    el.removeAttribute("title");
-                    el.onmouseover = function () { showTitle(el.getAttribute(_titleName)); };
-                    el.onmouseout = function () { hideTitle(); };
-                }); 
-                
-                document.getElementsByTagName("title").toArray().forEach(function (el) {
-                    if (el.parentNode.tagName !== "HEAD") {
+                    el.removeAttribute('title');
+                    el.onmouseover = () => showTitle(el.getAttribute(_titleName));
+                    el.onmouseout = () => hideTitle();
+                });
+
+                document.getElementsByTagName('title').toArray().forEach(function (el) {
+                    if (el.parentNode.tagName !== 'HEAD') {
                         el.parentNode.setAttribute(_titleName, el.innerHTML);
                         el.remove();
-                        el.parentNode.onmouseover = function () { showTitle(el.parentNode.getAttribute(_titleName)); };
-                        el.parentNode.onmouseout = function () { hideTitle(); };
+                        el.parentNode.onmouseover = () => showTitle(el.parentNode.getAttribute(_titleName));
+                        el.parentNode.onmouseout = () => hideTitle();
                     }
                 });
             };
-            
+
             //Inicia o Title.
-            this.Start = function() {
+            this.Start = function () {
                 document.onmousemove = getPlace;
-                document.addEventListener(X.GetBrowser() !== "firefox" ? "mousewheel" : "DOMMouseScroll", getPlace, false);
+                document.addEventListener(X.GetBrowser() !== 'firefox' ? 'mousewheel' : 'DOMMouseScroll', getPlace, false);
                 this.RenderTitle();
             };
-        
-            titleConfig = titleConfig || {};
-            if (titleConfig._style) 
-                Object.keys(titleConfig._style).forEach(function(att) { 
-                    return _titleStyle[att] = titleConfig._style[att];
-                });
-        
+
+            if (titleConfig._style)
+                Object.entries(titleConfig._style).forEach(([key, value]) => _titleStyle[key] = value);
+
             _titleDelay = titleConfig._delay || _titleDelay;
             _titleName = titleConfig._name || _titleName;
             _titleEl = document.getElementById(_titleName) ||
-                document.body.appendChild(X.CreateElement("DIV", {
+                document.body.appendChild(X.CreateElement('DIV', {
                     id: _titleName, style: _titleStyle
                 }));
         };
-            
+
         /*
         Construtor:
             element: (String OU HtmlElement) String com o id do Elemento OU o Elemento que irá mostrar o resultado,
                 se não for enviado, apresentará o resultado via console.log;                
         */
-        X.Derick = function(element) { 
-            var start, end, diff, 
+        X.Derick = function (element) {
+            var start, end, diff,
                 msec, sec, min, hr,
-                dateX, regxTime,
+                dateX,
                 chronoValue,
-                intervCh = null, 
-                intervCl = null,    
-                Chrono = function(end) { 
-                    end = end || new Date();
+                intervCh = null,
+                intervCl = null,
+                Chrono = function (end = new Date()) {
                     diff = new Date(end - start);
                     diff.setHours(end.getHours() - start.getHours());
                     SetTime(diff, true);
-                },          
-                SetTime = function(time, showMsec) {        
+                },
+                SetTime = function (time, showMsec) {
                     msec = time.getMilliseconds();
                     sec = time.getSeconds();
                     min = time.getMinutes();
                     hr = time.getHours();
                     if (hr < 0) hr = 24 + hr;
-                    if (hr < 10) hr = "0" + hr;
-                    if (min < 10) min = "0" + min;
-                    if (sec < 10) sec = "0" + sec;
-                    if (msec < 10) msec = "00" + msec;
-                    else if (msec < 100) msec = "0" + msec;
-                    SetChronoValue(("{hr}:{min}:{sec}" + (showMsec ? ":{msec}" : "")).format({hr: hr, min: min, sec: sec, msec: msec}));
-                },          
-                StopCh = function() {
-                    if(intervCh){
+                    if (hr < 10) hr = `0${hr}`;
+                    if (min < 10) min = `0${min}`;
+                    if (sec < 10) sec = `0${sec}`;
+                    if (msec < 10) msec = `00${msec}`;
+                    else if (msec < 100) msec = `0${msec}`;
+                    SetChronoValue(`${hr}:${min}:${sec}${(showMsec ? `:${msec}` : '')}`);
+                },
+                StopCh = function () {
+                    if (intervCh) {
                         clearInterval(intervCh);
                         intervCh = null;
                     }
-                },          
-                StopCl = function() {
-                    if(intervCl){
+                },
+                StopCl = function () {
+                    if (intervCl) {
                         clearInterval(intervCl);
                         intervCl = null;
                     }
                 },
-                StopAll = function() {
+                StopAll = function () {
                     StopCh();
                     StopCl();
                 },
-                SetChronoValue = function(value) {
+                SetChronoValue = function (value) {
                     chronoValue = value;
-                    if(element)
+                    if (element)
                         element.innerHTML = chronoValue;
                     else
                         console.log(chronoValue);
-                };      
-            element = typeof element === "string" ? document.getElementById(element) : element;
-            
-            this.Start = function() {
+                };
+            element = typeof element === 'string' ? document.getElementById(element) : element;
+
+            this.Start = function () {
                 StopCl();
                 start = new Date();
                 intervCh = setInterval(Chrono);
             };
-            
-            this.Continue = function() {
+
+            this.Continue = function () {
                 StopCl();
                 dateX = new Date();
                 start = new Date(dateX - diff);
                 start.setHours(dateX.getHours() - diff.getHours());
-                intervCh = setInterval(Chrono); 
+                intervCh = setInterval(Chrono);
             };
-            
-            this.Reset = function() {
+
+            this.Reset = function () {
                 StopAll();
-                SetChronoValue("00:00:00:000");
+                SetChronoValue('00:00:00:000');
                 start = new Date();
             };
-            
+
             //Mostra o tempo atual
-            this.Clock = function() {
+            this.Clock = function () {
                 StopAll();
                 SetTime(new Date(), false);
-                intervCl = setInterval(function(){SetTime(new Date(), false)}, 500);
+                intervCl = setInterval(function () { SetTime(new Date(), false) }, 500);
             };
-            
+
             /* Retorno: (Date) Tempo atual apresentado; */
-            this.GetTime = function() {
-                return diff;
-            };
-            
+            this.GetTime = () => diff;
+
             /* Retorno: (String) Tempo atual apresentado; */
-            this.GetValue = function() {
-                return chronoValue;
-            };
-            
+            this.GetValue = () => chronoValue;
+
             /*
             Parametros: 
                 deadline: (String OU Date) Data limite em String ou em Date;
                 isDayTime: (Boolean) Valor que define se a data limite passada será um horário do dia ou não;
             */
-            this.Countdown = function(deadline, isDayTime) {          
-                switch(X.TypeOf(deadline)) {
-                    case "date": dateX = deadline; break;
-                    case "string":
+            this.Countdown = function (deadline, isDayTime) {
+                switch (X.TypeOf(deadline)) {
+                    case 'date': dateX = deadline; break;
+                    case 'string':
                         dateX = new Date();
-                        regxTime = deadline.match(/(\d+)(?::(\d\d))?(?::(\d\d))?(?::(\d+))?/);
-                        dateX.setHours((isDayTime ? 0 : (dateX.getHours())-1) + parseInt(regxTime[1]));
-                        dateX.setMinutes((isDayTime ? 0 : dateX.getMinutes()) + parseInt(regxTime[2]) || 0);
-                        dateX.setSeconds((isDayTime ? 0 : dateX.getSeconds()) + parseInt(regxTime[3]) || 0);
-                        dateX.setMilliseconds((isDayTime ? 0 : dateX.getMilliseconds()) + parseInt(regxTime[4]) || 0);
+                        let [, hours, minutes, seconds, milliseconds] = deadline.match(/(\d+)(?::(\d\d))?(?::(\d\d))?(?::(\d+))?/);
+                        dateX.setHours((isDayTime ? 0 : (dateX.getHours()) - 1) + parseInt(hours));
+                        dateX.setMinutes((isDayTime ? 0 : dateX.getMinutes()) + parseInt(minutes) || 0);
+                        dateX.setSeconds((isDayTime ? 0 : dateX.getSeconds()) + parseInt(seconds) || 0);
+                        dateX.setMilliseconds((isDayTime ? 0 : dateX.getMilliseconds()) + parseInt(milliseconds) || 0);
                         break;
                 }
                 StopAll();
-                intervCh = setInterval(function() {
-                    start = new Date(); 
+                intervCh = setInterval(function () {
+                    start = new Date();
                     return Chrono(dateX);
                 });
             };
-            
+
             this.Stop = StopCh;
         };
     }
-    
+
     return X;
 })();
