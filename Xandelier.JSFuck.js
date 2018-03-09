@@ -3,7 +3,8 @@
 	const USE_CHAR_CODE = Symbol.for('USE_CHAR_CODE'),
 		USE_FUNCTION = Symbol.for('USE_FUNCTION');
 
-	const DEFAULT_FN = '[]["filter"]',
+	const DEFAULT_FN_NAME = 'filter', 
+		DEFAULT_FN = `[]["${DEFAULT_FN_NAME}"]`,
 		DEFAULT_STRING = '([]+[])';
 
 	const REGEX = {
@@ -126,7 +127,7 @@
 		'+': '(+(1+(true+[])[3]+(100))+[])[2]',
 		',': '[[]]["concat"]([[]])+[]',
 		'.': '(+(11+(true+[])[3]+(20))+[])[1]',
-		'-': '(+(".0000000001")+[])[2]',
+		'-': '(+(".0000001")+[])[2]',
 		'/': '([0]+false)["italics"]()[10]',
 
 		':': '(RegExp()+[])[3]',
@@ -162,20 +163,20 @@
 
 		for (key in CONSTRUCTORS)
 			regex += `\\b${key}\\b|`;
-		REGEX["Constructor"] = new RegExp(regex.substr(0, regex.length - 1) + endRegex, "gi");
+		REGEX.Constructor = new RegExp(regex.substr(0, regex.length - 1) + endRegex, "gi");
 
 		regex = '(';
 		for (key in SIMPLE)
 			regex += `\\b${key}\\b|`;
-		REGEX["Simple"] = new RegExp(regex.substr(0, regex.length - 1) + endRegex, "gi");
+		REGEX.Simple = new RegExp(regex.substr(0, regex.length - 1) + endRegex, "gi");
 	}
 
 	function fillWithCharCode(c) {
 		var value = c.charCodeAt(0).toString(16);
 		return `Function("return unescape")()("%"+${
-			REGEX["NotDigit"].test(value) ?
-				"(" + value.replace(REGEX["NotDigit"], ")+\"$1\"") :
-				value.replace(REGEX["Digit"], "($1)")
+			REGEX.NotDigit.test(value) ?
+				`(${value.replace(REGEX.NotDigit, ')+"$1"')}` :
+				value.replace(REGEX.Digit, "($1)")
 			})`;
 	}
 
@@ -204,20 +205,20 @@
 	}
 
 	function replaceInMap(value) {
-		value = value.replace(REGEX["Constructor"], key => `${CONSTRUCTORS[key]}["constructor"]`);
+		value = value.replace(REGEX.Constructor, key => `${CONSTRUCTORS[key]}["constructor"]`);
 
-		value = value.replace(REGEX["Simple"], key => SIMPLE[key]);
+		value = value.replace(REGEX.Simple, key => SIMPLE[key]);
 
-		return replaceDigit(value, REGEX["Digit"]);
+		return replaceDigit(value, REGEX.Digit);
 	}
 
 	function replaceDigit(value, regex) {
 		return value.replace(regex,
 			function (_, y) {
-				y = y.replace(REGEX["Plus"], "");
+				y = y.replace(REGEX.Plus, "");
 				if (y.length > 1) {
 					let isFirstDigit = true;
-					y = y.replace(REGEX["OnlyDigit"],
+					y = y.replace(REGEX.OnlyDigit,
 						(_, key) => {
 							if (isFirstDigit) {
 								isFirstDigit = false;
@@ -235,7 +236,7 @@
 
 	function replaceCharWithinQuotes(value, missing) {
 		missing = missing || {};
-		value = value.replace(REGEX["InvalidCharacters"],
+		value = value.replace(REGEX.InvalidCharacters,
 			c => missing[c] ? c : MAPPING[c] || `[${NUMBS[c]}]`);
 		return value;
 	}
@@ -254,7 +255,7 @@
 			for (key in MAPPING) {
 				value = MAPPING[key];
 
-				if (REGEX["InvalidCharacters"].test(value)) {
+				if (REGEX.InvalidCharacters.test(value)) {
 					missing[key] = value;
 					findMissing = true;
 				}
@@ -264,13 +265,13 @@
 		};
 
 		for (key in MAPPING) {
-			MAPPING[key] = MAPPING[key].replace(REGEX["WithinQuotes"],
+			MAPPING[key] = MAPPING[key].replace(REGEX.WithinQuotes,
 				a => a
-					.replace(REGEX["Quotes"], "")
+					.replace(REGEX.Quotes, "")
 					.split('')
 					.join('+')
-					.replace(REGEX["Open"], '"("')
-					.replace(REGEX["Close"], '")"')
+					.replace(REGEX.Open, '"("')
+					.replace(REGEX.Close, '")"')
 					.replace('"("', MAPPING["("])
 					.replace('")"', MAPPING[")"]));
 
@@ -299,11 +300,11 @@
 		if (!input)
 			return "";
 
-		input.replace(REGEX["Simple"],
+		input.replace(REGEX.Simple,
 			function (key) {
 				outputArray.push(`${SIMPLE[key]}+[]`);
 				return "";
-			}).replace(REGEX["All"],
+			}).replace(REGEX.All,
 			function (key) {
 				replacement = (!MAPPING[key] && !NUMBS[key]) ?
 					MAPPING[key] = configureOneValue(fillWithCharCode(key)) :
@@ -315,7 +316,7 @@
 		output = outputArray.join("+");
 
 		if (wrapWithEval)
-			output = configureOneValue(`${DEFAULT_FN}["constructor"](${output})()`);
+			output = `[][${encode(DEFAULT_FN_NAME)}][${encode("constructor")}](${output})()`;
 
 		return output;
 	}
@@ -333,7 +334,7 @@
 			if (key !== val)
 				throw "Different values!";
 
-			if (!dontvalidateChars && REGEX["InvalidCharacters"].test(str))
+			if (!dontvalidateChars && REGEX.InvalidCharacters.test(str))
 				throw "Invalid Characters";
 		}
 
@@ -341,7 +342,7 @@
 		// 	arr.push({ key, length: MAPPING[key].length, value: MAPPING[key] }); 
 		// 	return arr; 
 		// }, []).sort((a, b) => a.length - b.length);
-		// Object.keys(MAPPING).map(key => MAPPING[key]).join("").length; //239228
+		// Object.keys(MAPPING).map(key => MAPPING[key]).join("").length; //239210
 	}
 
 	createRegex();
