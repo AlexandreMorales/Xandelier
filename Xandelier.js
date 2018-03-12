@@ -12,6 +12,35 @@
 
     /*
     Parametros:
+        className: (String) Classe a ser verificada;
+    Retorno: (Boolean) Se o próprio elemento possui classe enviada;
+    */
+    Element.prototype.containsClass = function (className) {
+        return this.classList.contains(...className.split(' '));
+    };
+
+    /*
+    Parametros:
+        className: (String) Classe a ser adicionada;
+    Retorno: (Element) Elemento;
+    */
+    Element.prototype.addClass = function (className) {
+        this.classList.add(...className.split(' '));
+        return this;
+    };
+
+    /*
+    Parametros:
+        className: (String) Classe a ser removida;
+    Retorno: (Element) Elemento;
+    */
+    Element.prototype.removeClass = function (className) {
+        this.classList.remove(...className.split(' '));
+        return this;
+    };
+
+    /*
+    Parametros:
         att: (String) Atributo a ser adicionado ou removido;
         content: Conteúdo do atributo,
             se não for enviado ou enviado como false irá remover o atributo;
@@ -28,7 +57,7 @@
     /*
     Parametros:
         content: (Objeto OU Função) Objeto ou uma Função com as configurações do Elemento:
-            Se for uma função o parâmetro mandado será o próprio elemento e essa função deverá retornar um objeto com as configurações do Elemento;
+            Se for uma função o parâmetro mandado será o próprio elemento e essa função podera retornar um objeto com as configurações do Elemento;
             Para adicionar um evento o nome do atributo deve ser 'F' + nome_do_evento e o conteúdo deve ser a função do evento;
             Para adicionar um estilo o nome do atributo deve ser 'S' + nome_do_estilo e o conteúdo deve ser o valor do estilo;
             Para adicionar um atributo do DOM o nome do atributo deve ser 'A' + nome_do_atributo e o conteúdo deve ser o valor do atributo;
@@ -40,16 +69,16 @@
     Element.prototype.config = function (content) {
         if (typeof content === 'function')
             content = content(this);
-        if (!content) return this;
+        if (!content)
+            return this;
         Object.entries(content).forEach(([key, value]) => {
             if (typeof value === 'object') {
-                if (!this[key]) this[key] = {};
-                Object.entries(value).forEach(([key2, value2]) => {
-                    if (typeof this[key] === 'function')
-                        this[key](key2, value2)
-                    else
-                        this[key][key2] = value2;
-                });
+                if (!this[key])
+                    this[key] = value;
+                else if (typeof this[key] === 'function')
+                    Object.entries(value).forEach(this[key]);
+                else
+                    Object.assign(this[key], value)
             } else
                 switch (key[0]) {
                     case 'F':
@@ -71,11 +100,18 @@
 
     /*
     Parametros:
-        att: (Element) Elemento que será inserido;
+        element: (String OU HtmlElement) String com o tagName do novo Elemento OU o Elemento a que será inserido;
+        config:  (Objeto) Objeto com as configurações do Elemento (ver config);  
     Retorno: (Element) Elemento pai;
     */
-    Element.prototype.append = function (element) {
-        this.appendChild(element);
+    Element.prototype.append = function (element, config) {
+        if (element !== false) {
+            element = typeof element === 'string' ? X.createElement(element, config) : element;
+            if (Array.isArray(element))
+                element.forEach(el => this.appendChild(el));
+            else
+                this.appendChild(element);
+        }
         return this;
     };
 
@@ -147,7 +183,7 @@
     Array.prototype.unique = function (fun = (c => c), map) {
         const arrayUnique = [this[0]],
             arrayUniqueAtt = [fun(this[0])];
-        this.forEach(function (el) {
+        this.forEach((el) => {
             let value = fun(el);
             if (!arrayUniqueAtt.includes(value)) {
                 arrayUniqueAtt.push(value);
@@ -163,12 +199,9 @@
     Retorno: (Boolean) Se o elemento enviado está no próprio array;
     */
     Array.prototype.contains = function (element) {
-        switch (X.TypeOf(element)) {
-            case 'object': return !Object.values(content).find(val => !this.includes(val));
-            case 'array': return !element.find(el => !this.includes(el));
-            default: return this.includes(element);
-        };
-        return false;
+        if (Array.isArray(element)) return !element.find(el => !this.includes(el));
+        if (X.typeOf(element) === 'object') return !Object.values(content).find(val => !this.includes(val));
+        return this.includes(element);
     };
 
     /*
@@ -182,12 +215,13 @@
     Retorno: (Array) Array com os elementos filtrados pela busca;
     */
     Array.prototype.search = function (el, objSearch) {
-        const normalizeString = (str) => {
-            if (!_diacriticsSensitive) str = str.removeDiacritics();
-            if (!_caseSensitive) str = str.toUpperCase();
-            return str;
-        };
-        let { _att, _diacriticsSensitive, _caseSensitive } = objSearch;
+        const { _att, _diacriticsSensitive, _caseSensitive } = objSearch,
+            normalizeString = (str) => {
+                if (!_diacriticsSensitive) str = str.removeDiacritics();
+                if (!_caseSensitive) str = str.toUpperCase();
+                return str;
+            };
+
         return this.filter((d) => {
             d = (_att ? d[_att] : d);
             switch (typeof el) {
@@ -326,7 +360,7 @@
             { base: 'x', letters: '\u0078\u24E7\uFF58\u1E8B\u1E8D' },
             { base: 'y', letters: '\u0079\u24E8\uFF59\u1EF3\u00FD\u0177\u1EF9\u0233\u1E8F\u00FF\u1EF7\u1E99\u1EF5\u01B4\u024F\u1EFF' },
             { base: 'z', letters: '\u007A\u24E9\uFF5A\u017A\u1E91\u017C\u017E\u1E93\u1E95\u01B6\u0225\u0240\u2C6C\uA763' }
-        ].reduce(function (obj, item) {
+        ].reduce((obj, item) => {
             [...item.letters].forEach(l => obj[l] = item.base);
             return obj;
         }, {});
@@ -340,7 +374,12 @@
 let X, Xand, Xandelier;
 X = Xand = Xandelier = (function () {
     const X = (function () {
-        var initialElement = null,
+        let initialElement = null,
+            funcGetAtt = null,
+            item = null,
+            configNot = false;
+
+        const inputsTagNames = ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'],
             selectorMapper = {
                 ID: '#', CHILDREN: '>', PRECEDED: '~', OR: '|', ALLCHILDREN: ' ', VDOM: '§', ALL: '*',
                 CLASS: '.', PARENT: '<', SUCEDED: '+', AND: ',', NOT: '!', NAME: '$', TYPE: ':'
@@ -350,63 +389,66 @@ X = Xand = Xandelier = (function () {
             regexAttOp = new RegExp(`\\${selectorMapper.VDOM}|[\\w\\s\\-]+|[\\<\\>\\~\\!\\|\\^\\$\\*\\=]+`, 'g'),
             /* /\§|[\w\s\-]+|[\<\>\~\!\|\^\$\*\=]+/g */
             regexType = /[\w\-]+|\(|[\w\-]+|\)/g,
-            inputsTagNames = ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'],
-            funcGetAtt = null,
-            item = null,
-            _configNot = false,
-            funcExec = function (el) { return el.getElementsByTagName('*').toArray().filter(this.funcFilter); },
             mapFunc = {
-                '=': { funcFilter: el => (funcGetAtt(el) == item) ^ _configNot, funcExec },
-                '<': { funcFilter: el => (parseFloat(funcGetAtt(el)) < parseFloat(item)) ^ _configNot, funcExec },
-                '>': { funcFilter: el => (parseFloat(funcGetAtt(el)) > parseFloat(item)) ^ _configNot, funcExec },
-                '<=': { funcFilter: el => (parseFloat(funcGetAtt(el)) <= parseFloat(item)) ^ _configNot, funcExec },
-                '>=': { funcFilter: el => (parseFloat(funcGetAtt(el)) >= parseFloat(item)) ^ _configNot, funcExec },
-                '!=': { funcFilter: el => (funcGetAtt(el) != item) ^ _configNot, funcExec },
-                '~=': { funcFilter: el => (funcGetAtt(el) || '').split(' ').contains(item) ^ _configNot, funcExec },
-                '^=': { funcFilter: el => (funcGetAtt(el) || '').startsWith(item) ^ _configNot, funcExec },
-                '$=': { funcFilter: el => (funcGetAtt(el) || '').endsWith(item) ^ _configNot, funcExec },
-                '|=': { funcFilter: el => (funcGetAtt(el) || '').startsWith(`${item}-`) ^ _configNot, funcExec },
-                '*=': { funcFilter: el => ((funcGetAtt(el) || '').includes(item)) ^ _configNot, funcExec },
-                'hasAtt': { funcFilter: el => (!!funcGetAtt(el) ^ _configNot), funcExec },
+                '=': { funcFilter: el => (funcGetAtt(el) == item) ^ configNot, funcExec },
+                '<': { funcFilter: el => (parseFloat(funcGetAtt(el)) < parseFloat(item)) ^ configNot, funcExec },
+                '>': { funcFilter: el => (parseFloat(funcGetAtt(el)) > parseFloat(item)) ^ configNot, funcExec },
+                '<=': { funcFilter: el => (parseFloat(funcGetAtt(el)) <= parseFloat(item)) ^ configNot, funcExec },
+                '>=': { funcFilter: el => (parseFloat(funcGetAtt(el)) >= parseFloat(item)) ^ configNot, funcExec },
+                '!=': { funcFilter: el => (funcGetAtt(el) != item) ^ configNot, funcExec },
+                '~=': { funcFilter: el => (funcGetAtt(el) || '').split(' ').contains(item) ^ configNot, funcExec },
+                '^=': { funcFilter: el => (funcGetAtt(el) || '').startsWith(item) ^ configNot, funcExec },
+                '$=': { funcFilter: el => (funcGetAtt(el) || '').endsWith(item) ^ configNot, funcExec },
+                '|=': { funcFilter: el => (funcGetAtt(el) || '').startsWith(`${item}-`) ^ configNot, funcExec },
+                '*=': { funcFilter: el => ((funcGetAtt(el) || '').includes(item)) ^ configNot, funcExec },
+                'hasAtt': { funcFilter: el => (!!funcGetAtt(el) ^ configNot), funcExec },
                 'tagName': {
-                    funcFilter: el => ((el.tagName.toLowerCase() === item) ^ _configNot),
+                    funcFilter: el => ((el.tagName.toLowerCase() === item) ^ configNot),
                     funcExec: el => el.getElementsByTagName(item).toArray()
                 },
                 'funcAtt': {
                     funcFilter: el => el.getAttribute(funcGetAtt) == item || el.getAllParents().find(e => e.getAttribute(funcGetAtt) == item),
                     funcExec: el => el.getElementsByTagName('*').toArray().filter(e => !e.getAttribute(funcGetAtt) || e.getAttribute(funcGetAtt) == item)
-                }
+                },
+                [selectorMapper.ID]: {
+                    funcFilter: el => ((el.id === item) ^ configNot),
+                    funcExec: el => (el.getElementById) ? [el.getElementById(item)] : funcExec(el)
+                },
+                [selectorMapper.CLASS]: {
+                    funcFilter: el => (el.containsClass(item) ^ configNot),
+                    funcExec: el => el.getElementsByClassName(item).toArray()
+                },
+                [selectorMapper.NAME]: {
+                    funcFilter: el => ((el.name === item) ^ configNot),
+                    funcExec: el => (el.getElementsByName) ? el.getElementsByName(item).toArray() : funcExec(el)
+                },
+                [selectorMapper.TYPE]: { funcFilter: el => ((el.type === item) ^ configNot), funcExec }
             },
             mapType = {
-                'even': { funcFilter: el => el.tagName === 'TR' && (!(el.rowIndex % 2) ^ _configNot), funcExec },
-                'odd': { funcFilter: el => el.tagName === 'TR' && ((el.rowIndex % 2) ^ _configNot), funcExec },
-                'first-child': { funcFilter: el => (el.parentNode.firstElement() === el) ^ _configNot, funcExec },
-                'first-of-type': { funcFilter: el => (el.parentNode.getElement(`>${el.tagName}`)[0] === el) ^ _configNot, funcExec },
-                'last-child': { funcFilter: el => (el.parentNode.lastElement() === el) ^ _configNot, funcExec },
-                'last-of-type': {
-                    funcFilter: function (el) {
-                        let elTypes = el.parentNode.getElement(`>${el.tagName}`);
-                        return (elTypes[elTypes.length - 1] === el) ^ _configNot;
-                    }, funcExec
-                },
-                'only-child': { funcFilter: el => (el.parentNode.firstElement() === el && el.parentNode.children.length === 1) ^ _configNot, funcExec },
+                'even': { funcFilter: el => el.tagName === 'TR' && (!(el.rowIndex % 2) ^ configNot), funcExec },
+                'odd': { funcFilter: el => el.tagName === 'TR' && ((el.rowIndex % 2) ^ configNot), funcExec },
+                'first-child': { funcFilter: el => (el.parentNode.firstElement() === el) ^ configNot, funcExec },
+                'first-of-type': { funcFilter: el => (el.parentNode.getElement(`>${el.tagName}`)[0] === el) ^ configNot, funcExec },
+                'last-child': { funcFilter: el => (el.parentNode.lastElement() === el) ^ configNot, funcExec },
+                'last-of-type': { funcFilter: el => (el.parentNode.getElement(`>${el.tagName}`).pop() === el) ^ configNot, funcExec },
+                'only-child': { funcFilter: el => (el.parentNode.firstElement() === el && el.parentNode.children.length === 1) ^ configNot, funcExec },
                 'only-of-type': {
                     funcFilter: function (el) {
                         let elTypes = el.parentNode.getElement(`>${el.tagName}`);
-                        return (elTypes[0] === el && elTypes.length === 1) ^ _configNot;
+                        return (elTypes[0] === el && elTypes.length === 1) ^ configNot;
                     }, funcExec
                 },
-                'header': { funcFilter: el => !!el.tagName.match(/H\d/g) ^ _configNot, funcExec },
-                'empty': { funcFilter: el => (el.innerHTML === '') ^ _configNot, funcExec },
-                'parent': { funcFilter: el => (el.innerHTML !== '') ^ _configNot, funcExec },
-                'input': { funcFilter: el => inputsTagNames.includes(el.tagName) ^ _configNot, funcExec },
-                'hidden': { funcFilter: el => el.hidden ^ _configNot, funcExec },
-                'visible': { funcFilter: el => !el.hidden ^ _configNot, funcExec },
-                'enabled': { funcFilter: el => !el.disabled ^ _configNot, funcExec },
-                'disabled': { funcFilter: el => el.disabled ^ _configNot, funcExec },
-                'selected': { funcFilter: el => el.tagName === 'OPTION' && (el.selected ^ _configNot), funcExec },
-                'checked': { funcFilter: el => el.tagName === 'INPUT' && (el.checked ^ _configNot), funcExec }
-                //'animated':    { funcFilter: el => ((funcGetAtt(el) == item) ^ _configNot), funcExec }   
+                'header': { funcFilter: el => !!el.tagName.match(/H\d/g) ^ configNot, funcExec },
+                'empty': { funcFilter: el => (el.innerHTML === '') ^ configNot, funcExec },
+                'parent': { funcFilter: el => (el.innerHTML !== '') ^ configNot, funcExec },
+                'input': { funcFilter: el => inputsTagNames.includes(el.tagName) ^ configNot, funcExec },
+                'hidden': { funcFilter: el => el.hidden ^ configNot, funcExec },
+                'visible': { funcFilter: el => !el.hidden ^ configNot, funcExec },
+                'enabled': { funcFilter: el => !el.disabled ^ configNot, funcExec },
+                'disabled': { funcFilter: el => el.disabled ^ configNot, funcExec },
+                'selected': { funcFilter: el => el.tagName === 'OPTION' && (el.selected ^ configNot), funcExec },
+                'checked': { funcFilter: el => el.tagName === 'INPUT' && (el.checked ^ configNot), funcExec }
+                //'animated':    { funcFilter: el => ((funcGetAtt(el) == item) ^ configNot), funcExec }   
             },
             mapFuncType = {
                 // 'nth-child':        { funcFilter: el => true, funcExec },
@@ -424,62 +466,49 @@ X = Xand = Xandelier = (function () {
                 parent: el => el.parentElement,
                 suceded: el => el.getNextElement(),
                 preceded: el => el.getPreviousElement()
-            },
-            getElement;
+            };
 
-        mapFunc[selectorMapper.CLASS] = {
-            funcFilter: el => (el.classList.contains(item) ^ _configNot),
-            funcExec: el => el.getElementsByClassName(item).toArray()
-        };
+        function funcExec(el) { return el.getElementsByTagName('*').toArray().filter(this.funcFilter); };
 
-        mapFunc[selectorMapper.NAME] = {
-            funcFilter: el => ((el.name === item) ^ _configNot),
-            funcExec: el => (el.getElementsByName) ? el.getElementsByName(item).toArray() : funcExec(el)
-        };
-
-        mapFunc[selectorMapper.TYPE] = { funcFilter: el => ((el.type === item) ^ _configNot), funcExec };
-
-        getElement = function (selectors, elements, config = {}) {
-            var selector,
-                arrayRegexType,
-                funcExecFilter = null,
-                alreadyPassedParents = [],
-                elParentElement,
-                resultElements;
+        function getElement(selectors, elements, config = {}) {
             try {
+                let funcExecFilter = null;
                 initialElement = initialElement || (elements = elements || document);
                 if (!elements) return elements;
-                if (elements.length === undefined) elements = [elements];
+                if (!Array.isArray(elements)) elements = [elements];
                 if (!selectors.length)
-                    return (config._action === 'children') ?
+                    return (config.action === 'children') ?
                         elements.reduce((array, el) => [...array, ...el.children], []) :
-                        mapMap.hasOwnProperty(config._action) ?
-                            elements.reduce(function (array, el) {
-                                let value = mapMap[config._action](el);
+                        mapMap.hasOwnProperty(config.action) ?
+                            elements.reduce((array, el) => {
+                                let value = mapMap[config.action](el);
                                 if (value) array.push(value);
                                 return array;
                             }, []) :
                             elements;
 
                 selectors = (typeof selectors === 'string') ? selectors.match(regexQuery) : selectors;
-                selector = selectors.shift();
+                let selector = selectors.shift();
 
-                // debugger;
                 switch (selector) {
                     case selectorMapper.ALL: return getElement(selectors, elements.reduce((array, el) => [...array, ...el.getElementsByTagName('*')], []));
                     case selectorMapper.ALLCHILDREN:
-                        config._include = false;
+                        config.include = false;
                         return getElement(selectors, elements, config);
                     case selectorMapper.NOT:
                         if (elements[0].getElementById)
                             elements = elements[0].getElementsByTagName('*').toArray();
-                        _configNot = true;
+                        configNot = true;
                         return getElement(selectors, elements, config);
-                    case selectorMapper.ID: return getElement(selectors, initialElement.getElementById(selectors.shift()));
-                    case selectorMapper.CHILDREN: return getElement(selectors, elements, { _action: 'children' });
-                    case selectorMapper.PARENT: return getElement(selectors, elements, { _action: 'parent' });
-                    case selectorMapper.SUCEDED: return getElement(selectors, elements, { _action: 'suceded' });
-                    case selectorMapper.PRECEDED: return getElement(selectors, elements, { _action: 'preceded' });
+                    case selectorMapper.ID:
+                        item = selectors.shift();
+                        if (elements[0].getElementById)
+                            return getElement(selectors, elements[0].getElementById(item));
+                        break;
+                    case selectorMapper.CHILDREN: return getElement(selectors, elements, { action: 'children' });
+                    case selectorMapper.PARENT: return getElement(selectors, elements, { action: 'parent' });
+                    case selectorMapper.SUCEDED: return getElement(selectors, elements, { action: 'suceded' });
+                    case selectorMapper.PRECEDED: return getElement(selectors, elements, { action: 'preceded' });
                     case selectorMapper.AND: return [...elements, ...getElement(selectors, initialElement)];
                     case selectorMapper.OR: return (elements.length ? elements : false) || getElement(selectors, initialElement);
                     case selectorMapper.TYPE:
@@ -492,7 +521,7 @@ X = Xand = Xandelier = (function () {
                         }
                         funcExecFilter = mapType[item];
                         if (!funcExecFilter) {
-                            arrayRegexType = item.match(regexType);
+                            const arrayRegexType = item.match(regexType);
                             funcGetAtt = arrayRegexType[0];
                             funcExecFilter = mapFuncType[funcGetAtt];
                             if (funcExecFilter || funcGetAtt) {
@@ -524,23 +553,25 @@ X = Xand = Xandelier = (function () {
                         break;
                 };
 
+                let resultElements = null;
                 funcExecFilter = funcExecFilter || mapFunc[selector] || mapFunc['tagName'];
 
-                if (config._include)
+                if (config.include)
                     resultElements = elements.filter(funcExecFilter.funcFilter);
-                else if (config._action === 'children')
+                else if (config.action === 'children')
                     resultElements = elements.reduce((array, el) =>
                         [...array, ...el.children.toArray().filter(funcExecFilter.funcFilter)], []);
-                else if (mapMap.hasOwnProperty(config._action))
-                    resultElements = elements.reduce(function (array, el) {
-                        el = mapMap[config._action](el);
+                else if (mapMap.hasOwnProperty(config.action))
+                    resultElements = elements.reduce((array, el) => {
+                        el = mapMap[config.action](el);
                         if (el && funcExecFilter.funcFilter(el))
                             array.push(el);
                         return array;
                     }, []);
-                else
-                    resultElements = elements.reduce(function (array, el) {
-                        elParentElement = el.parentElement;
+                else {
+                    const alreadyPassedParents = [];
+                    resultElements = elements.reduce((array, el) => {
+                        let elParentElement = el.parentElement;
                         while (elParentElement) {
                             if (alreadyPassedParents.contains(elParentElement)) return array;
                             elParentElement = elParentElement.parentElement;
@@ -548,10 +579,11 @@ X = Xand = Xandelier = (function () {
                         alreadyPassedParents.push(el);
                         return [...array, ...funcExecFilter.funcExec(el)];
                     }, []);
+                }
 
-                _configNot = false;
+                configNot = false;
 
-                return getElement(selectors, resultElements, { _include: true });
+                return getElement(selectors, resultElements, { include: true });
             } finally {
                 initialElement = null;
             }
@@ -566,14 +598,15 @@ X = Xand = Xandelier = (function () {
         Parametros:
             obAjax: (Objeto) Objeto com as configurações do ajax:
                 _path: (String) URL do ajax
-                        (pode estar pré-setado a váriavel window.rootUrl que diz aonde a aplicação se encontra);
+                        (o início da url pode estar pré-setado na váriavel X.ajax.url);
                 _type: (String) Tipo de requisição em caixa alta(POST, GET, PUT, DELETE);
-                _dataType: (String OU Boolean) Tipo de data a ser enviado pelo ajax, 
-                        se for false não irá adicionar Data-type no header do request,
-                        se não for enviada o valor default é 'json';
-                _contentType: (String OU Boolean) Tipo de conteudo a ser enviado pelo ajax, 
-                        se for false não irá adicionar Content-type no header do request,
-                        se não for enviada o valor default é 'application/x-www-form-urlencoded; charset=UTF-8';
+                _headers: (Objeto) Objeto com os headers da requisição, com algumas propriedades padrões:
+                    'Data-Type': (String OU Boolean) Tipo de data a ser enviado pelo ajax, 
+                            se for false não irá adicionar Data-type no header do request,
+                            se não for enviada o valor default é 'json';
+                    'Content-Type': (String OU Boolean) Tipo de conteudo a ser enviado pelo ajax, 
+                            se for false não irá adicionar Content-type no header do request,
+                            se não for enviada o valor default é 'application/x-www-form-urlencoded; charset=UTF-8';
                 _arguments: (Objeto OU String) Paremetros para enviar no ajax;
                 _done: (Function) função a ser executada após retorno e sucesso do ajax;
                         Paramentros:
@@ -585,87 +618,85 @@ X = Xand = Xandelier = (function () {
                             status: (Int) O status do ajax;
                             responseText: (String) O que retornou do ajax;
         */
-        X.Ajax = function (obAjax) {
-            const { _path, _type = 'GET', _dataType = 'json', _contentType = 'application/x-www-form-urlencoded; charset=UTF-8', _arguments, _done, _error } = obAjax,
-                path = (window.rootUrl || '') + _path,
-                isPost = _type === 'POST',
-                XDomainRequest = XDomainRequest || null,
-                outputResult = function () {
-                    if (_done != undefined) {
-                        let resultValue;
-                        try {
-                            resultValue = (JSON) ? JSON.parse(xhttp.responseText) : eval(xhttp.responseText);
-                        } catch (e) {
-                            resultValue = xhttp.responseText;
-                        }
-                        _done(resultValue, xhttp);
-                    }
-                };
+        X.ajax = function (obAjax) {
+            const { _path, _type = 'GET', _headers = {}, _arguments, _done, _error } = obAjax,
+                path = (X.ajax.url || '') + _path,
+                hasBodyMessage = _type === 'POST' || _type === 'PUT',
+                xhttp = new XMLHttpRequest();
 
             let finalArguments;
-
-            if (typeof XMLHttpRequest === 'undefined') {
-                XMLHttpRequest = XDomainRequest || function () {
-                    try { return new ActiveXObject('Msxml2.XMLHTTP.6.0'); } catch (e) { }
-                    try { return new ActiveXObject('Msxml2.XMLHTTP.3.0'); } catch (e) { }
-                    try { return new ActiveXObject('Microsoft.XMLHTTP'); } catch (e) { }
-                    throw 'Esse browser não possui suporte para XMLHttpRequest.';
-                };
-            }
-
-            const xhttp = new XMLHttpRequest();
 
             if (_arguments) {
                 switch (typeof _arguments) {
                     case 'object':
                         finalArguments = Object.entries(_arguments).reduce((args, [key, value]) => {
-                            return args + (X.TypeOf(value) === 'array' ?
+                            return args + (Array.isArray(value) ?
                                 value.reduce((indexes, el) => `${indexes}${key}=${el}&`, '') :
-                                `${key}=${value}&`), isPost ? '' : '?';
+                                `${key}=${value}&`), hasBodyMessage ? '' : '?';
                         });
                         break;
-                    case 'string': finalArguments = (isPost ? '' : '/') + _arguments; break;
+                    case 'string': finalArguments = (hasBodyMessage ? '' : '/') + _arguments; break;
                     default: finalArguments = _arguments; break;
                 }
 
-                if (!isPost) path += finalArguments;
+                if (!hasBodyMessage) path += finalArguments;
             }
 
-            if (XDomainRequest)
-                xhttp.onload = outputResult;
-            else
-                xhttp.onreadystatechange = function () {
-                    if (xhttp.readyState == 4) {
-                        if (xhttp.status == 200)
-                            outputResult();
-                        else
-                            xhttp.onerror();
+            xhttp.onreadystatechange = () => {
+                if (xhttp.readyState == 4) {
+                    if (xhttp.status == 200) {
+                        if (_done != undefined) {
+                            let resultValue;
+                            try {
+                                resultValue = (JSON) ? JSON.parse(xhttp.responseText) : eval(xhttp.responseText);
+                            } catch (e) {
+                                resultValue = xhttp.responseText;
+                            }
+                            _done(resultValue, xhttp);
+                        }
                     }
+                    else
+                        xhttp.onerror();
                 }
+            }
 
-            xhttp.onerror = function () {
-                if (_error != undefined)
-                    _error(xhttp, xhttp.status, xhttp.responseText);
+            xhttp.onerror = () => {
+                if (_error != undefined) _error(xhttp, xhttp.status, xhttp.responseText);
             }
 
             xhttp.open(_type, path);
-            if (isPost) {
-                if (_dataType !== false) xhttp.setRequestHeader('Data-type', _dataType);
-                if (_contentType !== false)
-                    xhttp.setRequestHeader('Content-type', _contentType);
+
+            if (hasBodyMessage) {
+                if (_headers.hasOwnProperty('Data-type')) {
+                    if (_headers['Data-type'] === false) delete _headers['Data-type'];
+                } else
+                    _headers['Data-type'] = 'json';
+
+                if (_headers.hasOwnProperty('Content-type')) {
+                    if (_headers['Content-type'] === false) delete _headers['Content-type'];
+                } else
+                    _headers['Content-type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+            }
+
+            Object.entries(_headers).forEach(xhttp.setRequestHeader);
+
+            if (hasBodyMessage)
                 xhttp.send(finalArguments);
-            } else xhttp.send();
+            else
+                xhttp.send();
         };
+
+        X.ajax.url = '';
 
         /*
         Parametros:
             obj: Objeto enviado;
         Retorno: (String) O tipo do objeto em minúsuculo;
         */
-        X.TypeOf = obj => ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
+        X.typeOf = obj => ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
 
         /* Retorno: (String) O nome do browser atual em minúsuculo; */
-        X.GetBrowser = function () {
+        X.getBrowser = () => {
             if (window.opera || navigator.userAgent.includes(' OPR/'))
                 // Opera 8.0+ (UA detection to detect Blink/v8-powered Opera)
                 return 'opera';
@@ -689,21 +720,20 @@ X = Xand = Xandelier = (function () {
                 _process: (Function) Função que na qual os elementos do array serão processados;
                 _done: (Function) Função a ser executada após o término do processamento;
         */
-        X.ProcessArray = function (obj) {
-            setTimeout(function () {
+        X.processArray = obj => {
+            setTimeout(() => {
                 if (obj._percent)
-                    X.PercentageRender(obj._percent, 100 - ((obj._array.length * 100) / obj._length));
-                (obj._array.splice(0, Math.ceil(obj._length * 0.1))).forEach(x => obj._process(x));
+                    X.percentageRender(obj._percent, 100 - ((obj._array.length * 100) / obj._length));
+                obj._array.splice(0, Math.ceil(obj._length * 0.1)).forEach(x => obj._process(x));
                 if (obj._array.length > 0)
-                    setTimeout(X.ProcessArray(obj));
+                    setTimeout(X.processArray(obj));
                 else if (obj._done)
                     obj._done();
             });
         };
 
         /* Retorno: (String) Uma cor randomica em Hexadecimal; */
-        X.RandomColor = () =>
-            `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+        X.randomColor = () => `#${Math.floor(Math.random() * 16777215).toString(16)}`;
 
         /*
         Parametros: 
@@ -711,10 +741,10 @@ X = Xand = Xandelier = (function () {
             params: (Array) Array com os parametros da função à ser testada;
         Retorno: (Float) O tempo em segundos de que demorou para executar 1000 interção da função enviada;
         */
-        X.SpeedTest = function (func, params) {
+        X.speedTest = (func, params) => {
             const start = performance.now(); // start timestamp
             for (let i = 0; i < 1000; i++)
-                params ? func.apply(null, params) : func();
+                params ? func(...params) : func();
             return performance.now() - start; // end timestamp
         };
 
@@ -723,17 +753,15 @@ X = Xand = Xandelier = (function () {
             str: (String) String a ser permutada;
         Retorno: (Array[String]) Array de Strings com todas possíveis combinações de caracteres da String enviada;
         */
-        X.Permutations = function (str) {
-            const fn = function (start, active) {
+        X.permutations = str => {
+            const fn = (start, active) => {
                 if (active.length === 1)
                     return [start + active];
                 else {
-                    const returnResult = [];
+                    let returnResult = [];
                     for (let i = 0; i < active.length; i++) {
                         const result = fn(active[i], active.substr(0, i) + active.substr(i + 1));
-                        result.forEach(function (x) {
-                            returnResult.push(start + x);
-                        });
+                        returnResult = [...returnResult, ...result.map(x => start + x)];
                     }
                     return returnResult;
                 }
@@ -746,9 +774,7 @@ X = Xand = Xandelier = (function () {
             n: (Int) Número a ser fatoriado;
         Retorno: (Int) Número fatorado;
         */
-        X.Factorial = function (n) {
-            return n ? n * X.Factorial(n - 1) : 1;
-        };
+        X.factorial = n => n ? n * X.factorial(n - 1) : 1;
     }
 
     /////////////////////////////////////////////ELEMENTS//////////////////////////////////////////////
@@ -759,35 +785,26 @@ X = Xand = Xandelier = (function () {
             show:   (Boolean) Valor para decidir se o Elemento irá ser mostrado ou escondido, 
                         se não for mandado então o método retorna o display do Elemento enviado;
             delay:   (Float) Tempo em ms para mostrar ou esconder o Elemento;
+            callback:   (Function) Função que irá ser executada após o delay;
         */
-        X.Show = (function () {
-            let valueShowBool = false,
-                sameElement = {};
-            return function (element, show, delay) {
-                valueShowBool = show;
-                sameElement = element =
-                    typeof element === 'string' ? document.getElementById(element) : element;
-
-                if (show === undefined) return element.style.display;
-                if (delay === undefined) element.style.display = show ? 'block' : 'none';
-                else {
-                    sameElement = {};
-                    let opacity = valueShowBool ? 0.1 : 1; // opacidade inicial
-                    element.config({ style: { display: (show ? 'block' : 'none'), opacity } });
-                    const timer = setInterval(function () {
-                        if (opacity > 1 || opacity < 0.1) {
-                            clearInterval(timer);
-                            element.style.display = show ? 'block' : 'none';
-                        } else if (sameElement.id === element.id) {
-                            clearInterval(timer);
-                            element.style.display = valueShowBool ? 'block' : 'none';
-                        }
-                        element.config({ style: { opacity, filter: `alpha(opacity=${opacity * 100})` } });
-                        opacity = opacity + (opacity * 0.1) * (show ? 1 : -1);
-                    }, delay);
-                }
-            };
-        })();
+        X.show = (element, show, delay, callback) => {
+            element = typeof element === 'string' ? document.getElementById(element) : element;
+            if (show === undefined) return element.style.display;
+            if (delay === undefined) element.style.display = show ? 'block' : 'none';
+            else {
+                let opacity = show ? 0.1 : 1; // opacidade inicial
+                element.config({ style: { display: 'block', opacity } });
+                const timer = setInterval(() => {
+                    if (opacity > 1 || opacity < 0.1) {
+                        clearInterval(timer);
+                        element.style.display = show ? 'block' : 'none';
+                        if (callback) callback(element);
+                    }
+                    element.config({ style: { opacity, filter: `alpha(opacity=${opacity * 100})` } });
+                    opacity = opacity + (opacity * 0.1) * (show ? 1 : -1);
+                }, delay);
+            }
+        };
 
         /*
         Parametros:
@@ -795,9 +812,7 @@ X = Xand = Xandelier = (function () {
             config:  (Objeto) Objeto com as configurações do Elemento (ver config);  
         Retorno: (Element) Elemento;
         */
-        X.CreateElement = function (tagName, config) {
-            return document.createElement(tagName).config(config);
-        };
+        X.createElement = (tagName, config) => document.createElement(tagName).config(config);
 
         /*
         Parametros:
@@ -805,14 +820,13 @@ X = Xand = Xandelier = (function () {
             value: (Float) Porcentagem do Progress Bar;
         Retorno: (Element) Progress Bar;
         */
-        X.PercentageRender = function (element, value) {
+        X.percentageRender = (element, value) => {
             element = typeof element === 'string' ? document.getElementById(element) : element;
-            element.config({
+            return element.config({
                 Swidth: `${value}%`,
                 innerHTML: `${Math.round(value)}%`,
                 'Aaria-valuenow': value
             });
-            return element;
         };
 
         /*
@@ -821,203 +835,208 @@ X = Xand = Xandelier = (function () {
             containerId: (String) Id do container dentro do layout original que será renderizado conteúdo da página atual;
             callback: (Função) Função de callback após renderizar o layout;
         */
-        X.SetLayout = function (layoutPath, containerId, callback) {
+        X.setLayout = (layoutPath, containerId, callback) => {
             const containerContent = document.documentElement.innerHTML;
-            X.Ajax({
+            X.ajax({
                 _path: layoutPath,
-                _done: function (data) {
+                _done: (data) => {
                     document.documentElement.innerHTML = data;
                     document.getElementById(containerId).innerHTML = containerContent;
-                    if (callback)
-                        callback();
+                    if (callback) callback();
                 },
-                _error: function (request, textStatus, error) {
+                _error: (request, textStatus, error) => {
                     console.log(`Request Failed: ${textStatus}, ${error}`);
                 }
             });
         };
 
-        X.Modal = (function () {
-            var element = null,
-                _modalDelay = 5,
-                _clickOut = null,
-                _divNone = X.CreateElement('DIV', { Sdisplay: 'none' }),
-                _divBackdrop = X.CreateElement('DIV').classList.add('modal-backdrop', 'fade', 'in'),
-                _configConfig = function (_modalConfigAx, att, value) {
-                    if (_modalConfigAx[att] === undefined) return { className: value }
-                    if (_modalConfigAx[att] === false) return {};
+        X.modal = (function () {
+            const modalDelay = 10,
+                divBackdrop = X.createElement('DIV', { className: 'modal-backdrop fade show' });
 
-                    _modalConfigAx[att].className = (_modalConfigAx[att].className) ?
-                        `${value} ${_modalConfigAx[att].className}` : value;
-                    return _modalConfigAx[att];
-                },
-                _clickOutsideModal = function (e) {
-                    if (e.target.classList.contains('modal fade in')) {
-                        e.target.Toggle(false);
-                        if (_clickOut) _clickOut();
+            let modalElement = null;
+
+            function configConfig(modalConfig, att, value) {
+                if (modalConfig[att]) {
+                    let id = value.id;
+                    if (modalConfig[att].className)
+                        modalConfig[att].className = `${value.className} ${modalConfig[att].className}`;
+
+                    Object.assign(value, modalConfig[att]);
+                    value.id = id;
+                }
+
+                return value;
+            };
+
+            function clickOutsideModal(e) {
+                if (e.target.containsClass('modal fade in'))
+                    closeModal();
+            };
+
+            function closeModal() {
+                modalElement.toggle(false);
+            };
+
+            function toggle(content, toggleConfig = {}) {
+                if (content === undefined) content = !this.isShown;
+                else this.isShown = !!content;
+                if (!document.body.classList.contains('modal-open')) { //if para verificar data-toggle
+                    if (content) {
+                        document.body.appendChild(divBackdrop);
+                        this.classList.add('in');
+                        X.show(this, true, toggleConfig._delay || modalDelay);
+                        if (toggleConfig._clickOut === true)
+                            document.body.addEventListener('click', clickOutsideModal);
+                    } else {
+                        X.show(this, false, toggleConfig._delay || modalDelay, () => {
+                            document.body.removeChild(divBackdrop);
+                            this.classList.remove('in');
+                            document.body.removeEventListener('click', clickOutsideModal);
+                        });
                     }
-                },
-                closeModal = function () {
-                    element.Toggle(false);
-                },
-                Toggle = function (content, toggleConfig = {}) {
-                    if (content === undefined) content = !this.IsShown;
-                    this.IsShown = !!content;
-                    if (!document.body.classList.contains('modal-open')) { //if para verificar data-toggle
-                        X.Show(this.classList[content ? 'add' : 'remove']('in'), content, toggleConfig._delay || _modalDelay);
-                        if (toggleConfig._clickOut !== false) {
-                            if (content) _clickOut = toggleConfig._clickOut;
-                            document.body[`${content ? 'add' : 'remove'}EventListener`]('click', _clickOutsideModal);
-                        }
-                        document.body[`${content ? 'add' : 'remove'}Child`](_divBackdrop);
-                    } else document.body.classList.remove('modal-open');
-                    if (!content && this.onHideModal) this.onHideModal();
-                },
-                createModal = function (id, modalConfig = {}) {
-                    modalConfig._XBtn = modalConfig._XBtn === undefined ? 'x' : modalConfig._XBtn;
-                    modalConfig._XBtn = modalConfig._XBtn === false ? _divNone :
-                        X.CreateElement('BUTTON', {
+                } else
+                    document.body.classList.remove('modal-open');
+                if (!content && this.onHideModal) this.onHideModal();
+            };
+
+            return function (id, modalConfig = {}) {
+                modalElement = typeof id === 'string' ? document.getElementById(id) : id;
+                if (!modalElement) {
+                    if (!modalConfig.hasOwnProperty('_CloseBtnText')) modalConfig._CloseBtnText = 'x'
+
+                    if (!modalConfig.hasOwnProperty('_CloseBtn'))
+                        modalConfig._CloseBtn = X.createElement('BUTTON', {
                             className: 'close',
                             Fclick: closeModal,
                             'Adata-dismiss': 'modal',
-                            innerHTML: modalConfig._XBtn
+                            'Adata-label': 'Close'
+                        }).append('SPAN', {
+                            'Aaria-hidden': 'true',
+                            innerHTML: modalConfig._CloseBtnText
                         });
 
-                    modalConfig._head = modalConfig._head || _divNone;
-                    modalConfig._body = modalConfig._body || _divNone;
-
-                    modalConfig._foot = modalConfig._foot === undefined ?
-                        X.CreateElement('BUTTON', {
-                            className: 'btn btn-default',
+                    if (!modalConfig.hasOwnProperty('_foot'))
+                        modalConfig._foot = X.createElement('BUTTON', {
+                            className: 'btn btn-secondary',
                             Fclick: closeModal,
-                            'Adata-dismiss': 'modal',
                             innerHTML: 'Fechar'
-                        }) : modalConfig._foot || _divNone;
+                        });
 
-                    element = document.body
-                        .appendChild(X.CreateElement('DIV', { id, className: 'modal fade' })
-                            .append(X.CreateElement('DIV', _configConfig(modalConfig, '_configDialog', 'modal-dialog'))
-                                .append(X.CreateElement('DIV', _configConfig(modalConfig, '_configContent', 'modal-content'))
-                                    .append(X.CreateElement('DIV', _configConfig(modalConfig, '_configHead', 'modal-header'))
-                                        .append(modalConfig._XBtn)
-                                        .append(X.CreateElement('H4', _configConfig(modalConfig, '_configTitle', 'modal-title')))
-                                        .append(modalConfig._head))
-                                    .append(X.CreateElement('DIV', _configConfig(modalConfig, '_configBody', 'modal-body'))
+                    modalElement = document.body
+                        .appendChild(X.createElement('DIV', configConfig(modalConfig, '_configModal', { id, className: 'modal fade', Atabindex: '-1', Arole: 'dialog' }))
+                            .append(X.createElement('DIV', configConfig(modalConfig, '_configDialog', { className: 'modal-dialog', Arole: 'document' }))
+                                .append(X.createElement('DIV', configConfig(modalConfig, '_configContent', { className: 'modal-content' }))
+                                    .append(X.createElement('DIV', configConfig(modalConfig, '_configHead', { className: 'modal-header' }))
+                                        .append('H5', configConfig(modalConfig, '_configTitle', { innerHTML: modalConfig._titleText || '', className: 'modal-title' }))
+                                        .append(modalConfig._CloseBtn))
+                                    .append(X.createElement('DIV', configConfig(modalConfig, '_configBody', { className: 'modal-body' }))
                                         .append(modalConfig._body))
-                                    .append(X.CreateElement('DIV', _configConfig(modalConfig, '_configFoot', 'modal-footer'))
+                                    .append(X.createElement('DIV', configConfig(modalConfig, '_configFoot', { className: 'modal-footer' }))
                                         .append(modalConfig._foot)
                                     )
                                 )
                             )
                         );
+                }
 
-                    element.config({ Toggle, IsShown: false, ModalConfiguration: modalConfig });
-
-                    return element;
-                };
-
-            return createModal;
-        })();
-
-        X.Modal.Alert = (function () {
-            var _alertModal = null,
-                _alertName = 'alertXModal';
-
-            return function (text) {
-                if (_alertModal !== null)
-                    _alertModal.getElementsByTagName('label')[0].innerHTML = text;
-                else
-                    _alertModal = X.Modal(_alertName, {
-                        _configContent: { style: { width: '50%', margin: '0px auto 0px auto' } },
-                        _configHead: { style: { border: 'none' } },
-                        _configFoot: { style: { border: 'none', marginTop: '0px' } },
-                        _body: X.CreateElement('LABEL', { innerHTML: text }),
-                        _foot: X.CreateElement('BUTTON', {
-                            Fclick: () => _alertModal.Toggle(false),
-                            innerHTML: 'OK', className: 'btn btn-default'
-                        })
-                    });
-
-                _alertModal.Toggle(true, { _clickOut: true });
-                return _alertModal;
+                return modalElement.config({ toggle, isShown: false, modalConfig });
             };
         })();
 
-        X.Modal.Confirm = (function () {
-            var _confirmModal = null,
-                _confirmName = 'confirmXModal',
-                _okClick = null,
-                _cancelClick = null;
+        X.modal.alert = function (text, title) {
+            const alertModal = X.modal('x-modal-alert', {
+                _configContent: { Swidth: '50%', Smargin: '0px auto 0px auto' },
+                _configHead: { Sborder: 'none' },
+                _configFoot: { Sborder: 'none', SmarginTop: '0px' },
+                _titleText: title,
+                _body: X.createElement('LABEL'),
+                _foot: X.createElement('BUTTON', {
+                    Fclick: () => alertModal.toggle(false),
+                    innerHTML: 'OK',
+                    className: 'btn btn-default'
+                })
+            });
+
+            alertModal.getElementsByTagName('LABEL')[0].innerHTML = text;
+            alertModal.toggle(true, { _clickOut: true });
+            return alertModal;
+        };
+
+        X.modal.confirm = (function () {
+            let okClick = null,
+                cancelClick = null;
 
             return function (text, func, footConfig = {}) {
-                if (_confirmModal !== null) {
-                    _confirmModal.getElementsByTagName('button')[0].removeEventListener('click', _okClick);
-                    _confirmModal.getElementsByTagName('button')[1].removeEventListener('click', _cancelClick);
-                } else
-                    _confirmModal = X.Modal(_confirmName, {
-                        _XBtn: false,
-                        _configHead: { Sdisplay: 'none' },
-                        _body: X.CreateElement('LABEL'),
-                        _foot: X.CreateElement('DIV')
-                            .append(X.CreateElement('BUTTON', footConfig._okButton || {
-                                innerHTML: 'OK', className: 'btn btn-default'
-                            }))
-                            .append(X.CreateElement('BUTTON', footConfig._cancelButton || {
-                                innerHTML: 'Cancela', className: 'btn btn-default'
-                            }))
-                    });
+                const confirmModal = X.modal('x-modal-confirm', {
+                    _CloseBtn: false,
+                    _configHead: { Sdisplay: 'none' },
+                    _body: X.createElement('LABEL'),
+                    _foot: [
+                        X.createElement('BUTTON', footConfig._cancelButton || {
+                            innerHTML: 'Cancela', className: 'btn btn-secondary'
+                        }),
+                        X.createElement('BUTTON', footConfig._okButton || {
+                            innerHTML: 'OK', className: 'btn btn-primary'
+                        })]
+                }),
+                    cancelBtn = confirmModal.getElementsByTagName('BUTTON')[0],
+                    okBtn = confirmModal.getElementsByTagName('BUTTON')[1];
 
-                _confirmModal.getElementsByTagName('LABEL')[0].innerHTML = text;
-                _okClick = function () {
-                    _confirmModal.Toggle(false);
-                    func(true);
-                };
-                _confirmModal.getElementsByTagName('button')[0].addEventListener('click', _okClick);
-                _cancelClick = function () {
-                    _confirmModal.Toggle(false);
+                cancelBtn.removeEventListener('click', cancelClick);
+                okBtn.removeEventListener('click', okClick);
+
+                confirmModal.getElementsByTagName('LABEL')[0].innerHTML = text;
+                cancelClick = function () {
+                    confirmModal.toggle(false);
                     func(false);
                 };
-                _confirmModal.getElementsByTagName('button')[1].addEventListener('click', _cancelClick);
+                cancelBtn.addEventListener('click', cancelClick);
+                okClick = function () {
+                    confirmModal.toggle(false);
+                    func(true);
+                };
+                okBtn.addEventListener('click', okClick);
 
-                _confirmModal.Toggle(true);
-                return _confirmModal;
+                confirmModal.toggle(true);
+                return confirmModal;
             };
         })();
 
-        X.Modal.Prompt = (function () {
-            var _promptModal = null,
-                _promptName = 'promptXModal',
-                _promptFunc = null;
+        X.modal.prompt = (function () {
+            let promptFunc = null;
 
             return function (text, func) {
-                if (_promptModal !== null)
-                    _promptModal.getElementsByTagName('button')[0].removeEventListener('click', _promptFunc);
-                else
-                    _promptModal = X.Modal(_promptName, {
-                        _foot: false, _XBtn: false, _head: false,
-                        _configHead: { style: { display: 'none' } },
-                        _configBody: { style: { paddingTop: 'none' } },
-                        _body: X.CreateElement('DIV')
-                            .append(X.CreateElement('LABEL')).append(X.CreateElement('BR'))
-                            .append(X.CreateElement('DIV', { className: 'input-group' })
-                                .append(X.CreateElement('INPUT', { type: 'text', className: 'form-control', SmaxWidth: 'none' }))
-                                .append(X.CreateElement('SPAN', { className: 'input-group-btn' })
-                                    .append(X.CreateElement('BUTTON', {
-                                        className: 'btn btn-defaul', type: 'button', innerHTML: 'OK', Sborder: 'none'
-                                    }))
-                                )),
-                        _configFoot: { style: { display: 'none' } }
-                    });
+                const promptModal = X.modal('x-modal-prompt', {
+                    _foot: false,
+                    _CloseBtn: false,
+                    _configHead: { Sdisplay: 'none' },
+                    _configBody: { SpaddingTop: 'none' },
+                    _configFoot: { Sdisplay: 'none' },
+                    _body: [
+                        X.createElement('LABEL'),
+                        X.createElement('BR'),
+                        X.createElement('DIV', { className: 'input-group' })
+                            .append('INPUT', { type: 'text', className: 'form-control', SmaxWidth: 'none' })
+                            .append(X.createElement('SPAN', { className: 'input-group-btn' })
+                                .append('BUTTON', { className: 'btn btn-defaul', type: 'button', innerHTML: 'OK', Sborder: 'none' })
+                            )
+                    ]
+                }),
+                    confirmBtn = promptModal.getElementsByTagName('BUTTON')[0],
+                    input = promptModal.getElementsByTagName('INPUT')[0];
 
-                _promptModal.getElementsByTagName('label')[0].innerHTML = text;
-                _promptModal.getElementsByTagName('input')[0].value = '';
-                _promptFunc = function () {
-                    _promptModal.Toggle(false);
-                    func(_promptModal.getElementsByTagName('input')[0].value);
+                confirmBtn.removeEventListener('click', promptFunc);
+
+                promptModal.getElementsByTagName('LABEL')[0].innerHTML = text;
+                input.value = '';
+                promptFunc = function () {
+                    promptModal.toggle(false);
+                    func(input.value);
                 };
-                _promptModal.getElementsByTagName('button')[0].addEventListener('click', _promptFunc);
-                _promptModal.Toggle(true);
-                return _promptModal;
+                confirmBtn.addEventListener('click', promptFunc);
+                promptModal.toggle(true);
+                return promptModal;
             };
         })();
 
@@ -1026,71 +1045,71 @@ X = Xand = Xandelier = (function () {
             titleConfig: (Objeto) Objeto com as configurações do Title:
                 _style: (Objeto) Objeto com as configurações de estilo do Title;
                 _delay: (Float) Tempo em milisegundos de fade-in do Title. Default: 20;
-                _name: (String) Nome do atributo e do id do Elemento do Title. Default: personalizeTitle;
+                _name: (String) Nome do atributo e do id do Elemento do Title. Default: data-x-title;
         */
-        X.Title = function (titleConfig = {}) {
-            var _titleName = 'personalizeTitle',
-                _titleEl = null,
-                _titleDelay = 20,
-                _titleStyle = {
-                    padding: '3px',
-                    border: '1px solid black',
-                    'border-radius': '5px',
-                    'box-shadow': '2px 2px 5px grey',
-                    background: 'white',
-                    color: 'black',
-                    font: 'normal 11px Verdana',
-                    'text-align': 'left',
-                    position: 'absolute',
-                    'z-index': 1000
-                },
-                getPlace = function (evt) {
-                    return _titleEl.config({ style: { left: `${evt.pageX + 12}px`, top: `${evt.pageY + 20}px` } });
-                },
-                showTitle = function (text) {
-                    X.Show(_titleEl, true, _titleDelay);
-                    _titleEl.innerHTML = text;
-                },
-                hideTitle = function () {
-                    X.Show(_titleEl, false);
-                    _titleEl.innerHTML = '';
-                };
+        X.title = function (titleConfig = {}) {
+            const defaultTitleStyle = {
+                padding: '3px',
+                border: '1px solid black',
+                'border-radius': '5px',
+                'box-shadow': '2px 2px 5px grey',
+                background: 'white',
+                color: 'black',
+                font: 'normal 11px Verdana',
+                'text-align': 'left',
+                position: 'absolute',
+                'z-index': 1000
+            },
+                getPlace = (evt) => titleElement.config({ Sleft: `${evt.pageX + 12}px`, Stop: `${evt.pageY + 20}px` });
+
+            let titleAttribute = 'data-x-title',
+                titleDelay = 20;
+
+            function showTitle(text) {
+                X.show(titleElement, true, titleDelay);
+                titleElement.innerHTML = text;
+            };
+
+            function hideTitle() {
+                X.show(titleElement, false);
+                titleElement.innerHTML = '';
+            };
 
             //Renderiza o Title.
-            this.RenderTitle = function () {
-                X.Show(_titleEl, false);
+            this.renderTitle = function () {
+                X.show(titleElement, false);
                 X('[title]').forEach(function (el) {
-                    el.setAttribute(_titleName, el.title);
+                    el.setAttribute(titleAttribute, el.title);
                     el.removeAttribute('title');
-                    el.onmouseover = () => showTitle(el.getAttribute(_titleName));
-                    el.onmouseout = () => hideTitle();
+                    el.onmouseover = () => showTitle(el.getAttribute(titleAttribute));
+                    el.onmouseout = hideTitle;
                 });
 
                 document.getElementsByTagName('title').toArray().forEach(function (el) {
                     if (el.parentNode.tagName !== 'HEAD') {
-                        el.parentNode.setAttribute(_titleName, el.innerHTML);
+                        el.parentNode.setAttribute(titleAttribute, el.innerHTML);
                         el.remove();
-                        el.parentNode.onmouseover = () => showTitle(el.parentNode.getAttribute(_titleName));
-                        el.parentNode.onmouseout = () => hideTitle();
+                        el.parentNode.onmouseover = () => showTitle(el.parentNode.getAttribute(titleAttribute));
+                        el.parentNode.onmouseout = hideTitle;
                     }
                 });
             };
 
             //Inicia o Title.
-            this.Start = function () {
+            this.start = function () {
                 document.onmousemove = getPlace;
-                document.addEventListener(X.GetBrowser() !== 'firefox' ? 'mousewheel' : 'DOMMouseScroll', getPlace, false);
-                this.RenderTitle();
+                document.addEventListener(X.getBrowser() !== 'firefox' ? 'mousewheel' : 'DOMMouseScroll', getPlace, false);
+                this.renderTitle();
             };
 
             if (titleConfig._style)
-                Object.entries(titleConfig._style).forEach(([key, value]) => _titleStyle[key] = value);
+                Object.assign(defaultTitleStyle, titleConfig._style);
 
-            _titleDelay = titleConfig._delay || _titleDelay;
-            _titleName = titleConfig._name || _titleName;
-            _titleEl = document.getElementById(_titleName) ||
-                document.body.appendChild(X.CreateElement('DIV', {
-                    id: _titleName, style: _titleStyle
+            titleDelay = titleConfig._delay || titleDelay;
+            titleAttribute = titleConfig._name || titleAttribute;
+            let titleElement = document.getElementById(titleAttribute) ||
+                document.body.appendChild(X.createElement('DIV', {
+                    id: titleAttribute, style: defaultTitleStyle
                 }));
         };
 
@@ -1100,113 +1119,121 @@ X = Xand = Xandelier = (function () {
                 se não for enviado, apresentará o resultado via console.log;                
         */
         X.Derick = function (element) {
-            var start, end, diff,
-                msec, sec, min, hr,
-                dateX,
+            let startTime,
+                endTime,
+                diffTime,
                 chronoValue,
-                intervCh = null,
-                intervCl = null,
-                Chrono = function (end = new Date()) {
-                    diff = new Date(end - start);
-                    diff.setHours(end.getHours() - start.getHours());
-                    SetTime(diff, true);
-                },
-                SetTime = function (time, showMsec) {
-                    msec = time.getMilliseconds();
-                    sec = time.getSeconds();
-                    min = time.getMinutes();
-                    hr = time.getHours();
-                    if (hr < 0) hr = 24 + hr;
-                    if (hr < 10) hr = `0${hr}`;
-                    if (min < 10) min = `0${min}`;
-                    if (sec < 10) sec = `0${sec}`;
-                    if (msec < 10) msec = `00${msec}`;
-                    else if (msec < 100) msec = `0${msec}`;
-                    SetChronoValue(`${hr}:${min}:${sec}${(showMsec ? `:${msec}` : '')}`);
-                },
-                StopCh = function () {
-                    if (intervCh) {
-                        clearInterval(intervCh);
-                        intervCh = null;
-                    }
-                },
-                StopCl = function () {
-                    if (intervCl) {
-                        clearInterval(intervCl);
-                        intervCl = null;
-                    }
-                },
-                StopAll = function () {
-                    StopCh();
-                    StopCl();
-                },
-                SetChronoValue = function (value) {
-                    chronoValue = value;
-                    if (element)
-                        element.innerHTML = chronoValue;
-                    else
-                        console.log(chronoValue);
-                };
-            element = typeof element === 'string' ? document.getElementById(element) : element;
+                chronoInterval = null,
+                clockInterval = null;
 
-            this.Start = function () {
-                StopCl();
-                start = new Date();
-                intervCh = setInterval(Chrono);
+            function chrono(endTime = new Date()) {
+                diffTime = new Date(endTime - startTime);
+                diffTime.setHours(endTime.getHours() - startTime.getHours());
+                setTime(diffTime, true);
             };
 
-            this.Continue = function () {
-                StopCl();
-                dateX = new Date();
-                start = new Date(dateX - diff);
-                start.setHours(dateX.getHours() - diff.getHours());
-                intervCh = setInterval(Chrono);
+            function setTime(time, showMsec) {
+                let msec = time.getMilliseconds();
+                let sec = time.getSeconds();
+                let min = time.getMinutes();
+                let hr = time.getHours();
+                if (hr < 0) hr = 24 + hr;
+                if (hr < 10) hr = `0${hr}`;
+                if (min < 10) min = `0${min}`;
+                if (sec < 10) sec = `0${sec}`;
+                if (msec < 10) msec = `00${msec}`;
+                else if (msec < 100) msec = `0${msec}`;
+                setChronoValue(`${hr}:${min}:${sec}${(showMsec ? `:${msec}` : '')}`);
             };
 
-            this.Reset = function () {
-                StopAll();
-                SetChronoValue('00:00:00:000');
-                start = new Date();
+            function pauseChrono() {
+                if (chronoInterval) {
+                    clearInterval(chronoInterval);
+                    chronoInterval = null;
+                }
+            };
+
+            function pauseClock() {
+                if (clockInterval) {
+                    clearInterval(clockInterval);
+                    clockInterval = null;
+                }
+            };
+
+            function pauseAll() {
+                pauseChrono();
+                pauseClock();
+            };
+
+            function setChronoValue(value) {
+                chronoValue = value;
+                if (element)
+                    element.innerHTML = chronoValue;
+                else
+                    console.log(chronoValue);
+            };
+
+            this.start = function () {
+                pauseClock();
+                startTime = new Date();
+                chronoInterval = setInterval(chrono);
+            };
+
+            this.continue = function () {
+                pauseClock();
+                const date = new Date();
+                startTime = new Date(date - diffTime);
+                startTime.setHours(date.getHours() - diffTime.getHours());
+                chronoInterval = setInterval(chrono);
+            };
+
+            this.reset = function () {
+                pauseAll();
+                setChronoValue('00:00:00:000');
+                startTime = new Date();
             };
 
             //Mostra o tempo atual
-            this.Clock = function () {
-                StopAll();
-                SetTime(new Date(), false);
-                intervCl = setInterval(function () { SetTime(new Date(), false) }, 500);
+            this.clock = function () {
+                pauseAll();
+                setTime(new Date(), false);
+                clockInterval = setInterval(function () { setTime(new Date(), false) }, 500);
             };
 
             /* Retorno: (Date) Tempo atual apresentado; */
-            this.GetTime = () => diff;
+            this.getTime = () => diffTime;
 
             /* Retorno: (String) Tempo atual apresentado; */
-            this.GetValue = () => chronoValue;
+            this.getValue = () => chronoValue;
 
             /*
             Parametros: 
                 deadline: (String OU Date) Data limite em String ou em Date;
-                isDayTime: (Boolean) Valor que define se a data limite passada será um horário do dia ou não;
             */
-            this.Countdown = function (deadline, isDayTime) {
-                switch (X.TypeOf(deadline)) {
-                    case 'date': dateX = deadline; break;
+            this.countdown = function (deadline) {
+                let date = null;
+                switch (X.typeOf(deadline)) {
+                    case 'date': date = deadline; break;
                     case 'string':
-                        dateX = new Date();
-                        let [, hours, minutes, seconds, milliseconds] = deadline.match(/(\d+)(?::(\d\d))?(?::(\d\d))?(?::(\d+))?/);
-                        dateX.setHours((isDayTime ? 0 : (dateX.getHours()) - 1) + parseInt(hours));
-                        dateX.setMinutes((isDayTime ? 0 : dateX.getMinutes()) + parseInt(minutes) || 0);
-                        dateX.setSeconds((isDayTime ? 0 : dateX.getSeconds()) + parseInt(seconds) || 0);
-                        dateX.setMilliseconds((isDayTime ? 0 : dateX.getMilliseconds()) + parseInt(milliseconds) || 0);
+                        date = new Date();
+                        let [, hours, minutes, seconds, milliseconds] =
+                            deadline.match(/(\d+)(?::(\d\d))?(?::(\d\d))?(?::(\d+))?/);
+                        date.setHours(((date.getHours()) - 1) + parseInt(hours));
+                        date.setMinutes((date.getMinutes()) + parseInt(minutes) || 0);
+                        date.setSeconds((date.getSeconds()) + parseInt(seconds) || 0);
+                        date.setMilliseconds((date.getMilliseconds()) + parseInt(milliseconds) || 0);
                         break;
                 }
-                StopAll();
-                intervCh = setInterval(function () {
-                    start = new Date();
-                    return Chrono(dateX);
+                pauseAll();
+                chronoInterval = setInterval(function () {
+                    startTime = new Date();
+                    return chrono(date);
                 });
             };
 
-            this.Stop = StopCh;
+            this.pause = pauseChrono;
+
+            element = typeof element === 'string' ? document.getElementById(element) : element;
         };
     }
 
