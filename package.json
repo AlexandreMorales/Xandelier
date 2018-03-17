@@ -1,0 +1,22 @@
+{
+  "name": "xandelier",
+  "version": "1.0.0",
+  "description": "JavaScript library for optimizing DOM features and utilities",
+  "main": "Xandelier.js",
+  "scripts": {
+    "test": "jasmine"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlexandreMorales/Xandelier.git"
+  },
+  "keywords": [
+    "Xandelier"
+  ],
+  "author": "Alexandre Morales",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AlexandreMorales/Xandelier/issues"
+  },
+  "homepage": "https://github.com/AlexandreMorales/Xandelier#readme"
+}

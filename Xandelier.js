@@ -199,7 +199,7 @@
     */
     Array.prototype.contains = function (value) {
         if (Array.isArray(value)) return !value.find(el => !this.includes(el));
-        if (X.typeOf(value) === "object") return !Object.values(value).find(val => !this.includes(val));
+        if (typeof value === "object") return !Object.values(value).find(val => !this.includes(val));
         return this.includes(value);
     };
 
@@ -499,18 +499,24 @@ X = Xand = Xandelier = (function () {
                     resultElements = null;
 
                 initialElement = initialElement || (elements = elements || document);
-                if (!elements) return elements;
-                if (!Array.isArray(elements)) elements = [elements];
-                if (!selectors.length)
-                    return (config.action === "children") ?
-                        elements.reduce((array, el) => [...array, ...el.children], []) :
-                        mapMap.hasOwnProperty(config.action) ?
-                            elements.reduce((array, el) => {
-                                let value = mapMap[config.action](el);
-                                if (value) array.push(value);
-                                return array;
-                            }, []) :
-                            elements;
+                if (!elements)
+                    return elements;
+                if (!Array.isArray(elements))
+                    elements = [elements];
+                if (!selectors.length) {
+                    if(config.action === "children")
+                        return elements.reduce((array, el) => [...array, ...el.children], []);
+                    if(mapMap.hasOwnProperty(config.action)) {
+                        const action = mapMap[config.action];
+                        return elements.reduce((array, el) => {
+                            let value = action(el);
+                            if (value)
+                                array.push(value);
+                            return array;
+                        }, []);
+                    }
+                    return elements;
+                }
 
                 selectors = (typeof selectors === "string") ? selectors.match(regexQuery) : selectors;
                 selector = selectors.shift();
@@ -546,13 +552,15 @@ X = Xand = Xandelier = (function () {
                         }
                         funcExecFilter = mapType[item];
                         if (!funcExecFilter) {
-                            const arrayRegexType = item.match(regexType);
-                            funcGetAtt = arrayRegexType[0];
+                            const [func, openningBracket, value, closingBracket] = item.match(regexType);
+                            funcGetAtt = func;
                             funcExecFilter = mapFuncType[funcGetAtt];
                             if (funcExecFilter || funcGetAtt) {
-                                if (arrayRegexType.pop() !== ")")
+                                if (closingBracket !== ")")
                                     throw "Os parentêses não foram fechados. Ex.: :funcao(valor)";
-                                item = arrayRegexType[2];
+                                if (openningBracket !== "(")
+                                    throw "Os parentêses não foram abertos. Ex.: :funcao(valor)";
+                                item = value;
                                 if (!funcExecFilter) {
                                     funcExecFilter = mapFunc.funcAtt;
                                     //selectors.unshift("*");
@@ -567,13 +575,13 @@ X = Xand = Xandelier = (function () {
                         break;
                     default:
                         if (selector[0] === "[") {
-                            if (selectors.shift() !== "]") throw "Os conchetes não foram fechados. Ex.: [atributo=valor]";
+                            if (selectors.shift() !== "]")
+                                throw "Os conchetes não foram fechados. Ex.: [atributo=valor]";
                             const arrayRegexAtt = selector.match(regexAttOp);
                             funcGetAtt = (arrayRegexAtt[0] === selectorMapper.VDOM) ?
                                 (arrayRegexAtt.shift(), el => el.getVDOMAttribute(arrayRegexAtt[0])) :
                                 el => el.getAttribute(arrayRegexAtt[0]);
-                            selector = arrayRegexAtt[1] || "hasAtt";
-                            item = arrayRegexAtt[2];
+                            [, selector = "hasAtt", item] = arrayRegexAtt;
                         } else
                             item = selector.toLowerCase();
                         break;
@@ -694,7 +702,7 @@ X = Xand = Xandelier = (function () {
             if (hasBodyMessage) {
                 const setDefaultValue = (key, defaultValue) => {
                     if (_headers.hasOwnProperty(key)) {
-                        if (_headers[key] === false) 
+                        if (_headers[key] === false)
                             delete _headers[key];
                     } else
                         _headers[key] = defaultValue;
@@ -802,13 +810,13 @@ X = Xand = Xandelier = (function () {
 
         /*
         Parametros:
-            n: (Int) Número a ser fatoriado;
+            number: (Int) Número a ser fatoriado;
         Retorno: (Int) Número fatorado;
         */
-        X.factorial = n => n ? n * X.factorial(n - 1) : 1;
+        X.factorial = number => number ? number * X.factorial(number - 1) : 1;
     })();
 
-    /////////////////////////////////////////////ELEMENTS//////////////////////////////////////////////
+    ///////////////////////////////////////////////DOM/////////////////////////////////////////////////
     (function () {
         /*
         Parametros:
@@ -1013,8 +1021,7 @@ X = Xand = Xandelier = (function () {
                                 innerHTML: "OK", className: "btn btn-primary"
                             })]
                     }),
-                    cancelBtn = confirmModal.getElementsByTagName("BUTTON")[0],
-                    okBtn = confirmModal.getElementsByTagName("BUTTON")[1];
+                    [cancelBtn, okBtn] = confirmModal.getElementsByTagName("BUTTON");
 
                 cancelBtn.removeEventListener("click", cancelClick);
                 okBtn.removeEventListener("click", okClick);
