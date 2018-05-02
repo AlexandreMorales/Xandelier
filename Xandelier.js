@@ -5,7 +5,7 @@
 /*jslint browser:true*/
 /*eslint-disable no-useless-escape*/
 ////////////////////////////////////////////PROTOTYPES//////////////////////////////////////////////
-(function () {
+{
     "use strict";
     /*
     Parametros:
@@ -56,6 +56,7 @@
         content: (Objeto OU Função) Objeto ou uma Função com as configurações do Elemento:
             Se for uma função o parâmetro mandado será o próprio elemento e essa função podera retornar um objeto com as configurações do Elemento;
             Para adicionar um evento o nome do atributo deve ser "F" + nome_do_evento e o conteúdo deve ser a função do evento;
+            Para remover um evento o nome do atributo deve ser "R" + nome_do_evento e o conteúdo deve ser a função do evento;
             Para adicionar um estilo o nome do atributo deve ser "S" + nome_do_estilo e o conteúdo deve ser o valor do estilo;
             Para adicionar um atributo do DOM o nome do atributo deve ser "A" + nome_do_atributo e o conteúdo deve ser o valor do atributo;
             Para adicionar multiplos itens o nome do atributo deve ser o nome da função\atributo que adiciona eles (como "addEventListener", "style" e "setAttribute")
@@ -81,6 +82,9 @@
                     case "F":
                         this.addEventListener(key.substr(1), value);
                         break;
+                    case "R":
+                        this.removeEventListener(key.substr(1), value);
+                        break;
                     case "S":
                         this.style[key.substr(1)] = value;
                         break;
@@ -97,17 +101,28 @@
 
     /*
     Parametros:
-        element: (String OU HtmlElement) String com o tagName do novo Elemento OU o Elemento a que será inserido;
+        child: (String OU HtmlElement) String com o tagName do novo Elemento OU o Elemento a que será inserido;
         config:  (Objeto) Objeto com as configurações do Elemento (ver config);
     Retorno: (Element) Elemento pai;
     */
-    Element.prototype.append = function (element, config) {
-        if (element !== false) {
-            element = typeof element === "string" ? X.createElement(element, config) : element;
-            if (Array.isArray(element))
-                element.forEach(el => this.appendChild(el));
+    Element.prototype.append = function (child, config) {
+        if (!!child) {
+            child = !!config ? X.createElement(child, config) : child;
+
+            if (Array.isArray(child))
+                child.forEach(el => this.append(el, config));
             else
-                this.appendChild(element);
+                this.appendChild(child.toHTMLElement());
+        }
+        return this;
+    };
+
+    Element.prototype.remove = function (child) {
+        if (!!child) {
+            if (Array.isArray(child))
+                child.forEach(el => this.remove(el));
+            else
+                this.removeChild(child.toHTMLElement());
         }
         return this;
     };
@@ -169,6 +184,10 @@
         return parents;
     };
 
+    Element.prototype.toHTMLElement = function () {
+        return this;
+    };
+
     /*
     Parametros:
         fun: (Function) Regra para separar elementos únicos no array,
@@ -207,22 +226,22 @@
     Parametros:
         el: (String OU Float) Elemento a ser buscado;
         objSearch: (Objeto) Objeto com as configurações da busca:
-            _att: (String) Atributo de comparação entre os elementos do array,
+            att: (String) Atributo de comparação entre os elementos do array,
                     se não for enviada então a regra será comparar elemento por elemento;
-            _diacriticsSensitive: (Boolean) Valor que indica se na comparação de strings não irá desconsiderar os acentos;
-            _caseSensitive: (Boolean) Valor que indica se na comparação de strings não será Case Sensitive;
+            diacriticsSensitive: (Boolean) Valor que indica se na comparação de strings não irá desconsiderar os acentos;
+            caseSensitive: (Boolean) Valor que indica se na comparação de strings não será Case Sensitive;
     Retorno: (Array) Array com os elementos filtrados pela busca;
     */
     Array.prototype.search = function (el, objSearch) {
-        const { _att, _diacriticsSensitive, _caseSensitive } = objSearch,
+        const { att, diacriticsSensitive, caseSensitive } = objSearch,
             normalizeString = (str) => {
-                if (!_diacriticsSensitive) str = str.removeDiacritics();
-                if (!_caseSensitive) str = str.toUpperCase();
+                if (!diacriticsSensitive) str = str.removeDiacritics();
+                if (!caseSensitive) str = str.toUpperCase();
                 return str;
             };
 
         return this.filter(d => {
-            d = (_att ? d[_att] : d);
+            d = att ? d[att] : d;
             switch (typeof el) {
                 case "number": return d === el;
                 case "string": return normalizeString(d).includes(normalizeString(el));
@@ -389,7 +408,7 @@
             return this.replace(/[^\u0000-\u007E]/g, a => diacriticsMap[a] || a);
         };
     })();
-})();
+}
 
 let X, Xand, Xandelier;
 X = Xand = Xandelier = (function () {
@@ -504,9 +523,9 @@ X = Xand = Xandelier = (function () {
                 if (!Array.isArray(elements))
                     elements = [elements];
                 if (!selectors.length) {
-                    if(config.action === "children")
+                    if (config.action === "children")
                         return elements.reduce((array, el) => [...array, ...el.children], []);
-                    if(mapMap.hasOwnProperty(config.action)) {
+                    if (mapMap.hasOwnProperty(config.action)) {
                         const action = mapMap[config.action];
                         return elements.reduce((array, el) => {
                             let value = action(el);
@@ -518,7 +537,7 @@ X = Xand = Xandelier = (function () {
                     return elements;
                 }
 
-                selectors = (typeof selectors === "string") ? selectors.match(regexQuery) : selectors;
+                selectors = typeof selectors === "string" ? selectors.match(regexQuery) : selectors;
                 selector = selectors.shift();
 
                 switch (selector) {
@@ -626,50 +645,50 @@ X = Xand = Xandelier = (function () {
     })();
 
     //////////////////////////////////////////////UTILS////////////////////////////////////////////////
-    (function () {
+    {
         /*
         Parametros:
             obAjax: (Objeto) Objeto com as configurações do ajax:
-                _path: (String) URL do ajax
+                path: (String) URL do ajax
                         (o início da url pode estar pré-setado na váriavel X.ajax.url);
-                _type: (String) Tipo de requisição em caixa alta(POST, GET, PUT, DELETE);
-                _headers: (Objeto) Objeto com os headers da requisição, com algumas propriedades padrões:
+                type: (String) Tipo de requisição em caixa alta(POST, GET, PUT, DELETE);
+                headers: (Objeto) Objeto com os headers da requisição, com algumas propriedades padrões:
                     "Data-Type": (String OU Boolean) Tipo de data a ser enviado pelo ajax,
                             se for false não irá adicionar Data-type no header do request,
                             se não for enviada o valor default é "json";
                     "Content-Type": (String OU Boolean) Tipo de conteudo a ser enviado pelo ajax,
                             se for false não irá adicionar Content-type no header do request,
                             se não for enviada o valor default é "application/x-www-form-urlencoded; charset=UTF-8";
-                _arguments: (Objeto OU String) Paremetros para enviar no ajax;
-                _done: (Function) função a ser executada após retorno e sucesso do ajax;
+                arguments: (Objeto OU String) Paremetros para enviar no ajax;
+                done: (Function) função a ser executada após retorno e sucesso do ajax;
                         Paramentros:
                             value: O que retornou do ajax;
                             xhttp: (XMLHttpRequest) O objeto XMLHttpRequest do ajax;
-                _error: (Function) função a ser executada se ocorrer algum erro durante o ajax;
+                error: (Function) função a ser executada se ocorrer algum erro durante o ajax;
                         Paramentros:
                             xhttp: (XMLHttpRequest) O objeto XMLHttpRequest do ajax;
                             status: (Int) O status do ajax;
                             responseText: (String) O que retornou do ajax;
         */
         X.ajax = function (obAjax) {
-            const { _path, _type = "GET", _headers = {}, _arguments, _done, _error } = obAjax,
-                hasBodyMessage = _type === "POST" || _type === "PUT",
+            const { path, type = "GET", headers = {}, ajaxArguments, done, error } = obAjax,
+                hasBodyMessage = type === "POST" || type === "PUT",
                 xhttp = new XMLHttpRequest();
 
             let finalArguments,
-                path = (X.ajax.url || "") + _path;
+                path = (X.ajax.url || "") + path;
 
-            if (_arguments) {
-                switch (typeof _arguments) {
+            if (ajaxArguments) {
+                switch (typeof ajaxArguments) {
                     case "object":
-                        finalArguments = Object.entries(_arguments).reduce((args, [key, value]) => {
+                        finalArguments = Object.entries(ajaxArguments).reduce((args, [key, value]) => {
                             return args + (Array.isArray(value) ?
                                 value.reduce((indexes, el) => `${indexes}${key}=${el}&`, "") :
                                 `${key}=${value}&`), hasBodyMessage ? "" : "?";
                         });
                         break;
-                    case "string": finalArguments = (hasBodyMessage ? "" : "/") + _arguments; break;
-                    default: finalArguments = _arguments; break;
+                    case "string": finalArguments = (hasBodyMessage ? "" : "/") + ajaxArguments; break;
+                    default: finalArguments = ajaxArguments; break;
                 }
 
                 if (!hasBodyMessage) path += finalArguments;
@@ -679,13 +698,13 @@ X = Xand = Xandelier = (function () {
                 let resultValue;
                 if (xhttp.readyState === 4) {
                     if (xhttp.status === 200) {
-                        if (_done !== undefined) {
+                        if (done !== undefined) {
                             try {
                                 resultValue = JSON.parse(xhttp.responseText);
                             } catch (e) {
                                 resultValue = xhttp.responseText;
                             }
-                            _done(resultValue, xhttp);
+                            done(resultValue, xhttp);
                         }
                     }
                     else
@@ -694,25 +713,26 @@ X = Xand = Xandelier = (function () {
             };
 
             xhttp.onerror = () => {
-                if (_error !== undefined) _error(xhttp, xhttp.status, xhttp.responseText);
+                if (error !== undefined)
+                    error(xhttp, xhttp.status, xhttp.responseText);
             };
 
-            xhttp.open(_type, path);
+            xhttp.open(type, path);
 
             if (hasBodyMessage) {
                 const setDefaultValue = (key, defaultValue) => {
-                    if (_headers.hasOwnProperty(key)) {
-                        if (_headers[key] === false)
-                            delete _headers[key];
+                    if (headers.hasOwnProperty(key)) {
+                        if (headers[key] === false)
+                            delete headers[key];
                     } else
-                        _headers[key] = defaultValue;
+                        headers[key] = defaultValue;
                 };
 
                 setDefaultValue("Data-type", "json");
                 setDefaultValue("Content-type", "application/x-www-form-urlencoded; charset=UTF-8");
             }
 
-            Object.entries(_headers).forEach(xhttp.setRequestHeader);
+            Object.entries(headers).forEach(xhttp.setRequestHeader);
 
             if (hasBodyMessage)
                 xhttp.send(finalArguments);
@@ -748,21 +768,21 @@ X = Xand = Xandelier = (function () {
         /*
         Parametros:
             obj: Objeto com as configurações do processamento:
-                _percent: (String) Id da barra de progresso a ser atualizada durante o processamento;
-                _array: (Array) Array a ser processado;
-                _length: (Int) Tamanho do array enviado;
-                _process: (Function) Função que na qual os elementos do array serão processados;
-                _done: (Function) Função a ser executada após o término do processamento;
+                percent: (String) Id da barra de progresso a ser atualizada durante o processamento;
+                array: (Array) Array a ser processado;
+                length: (Int) Tamanho do array enviado;
+                process: (Function) Função que na qual os elementos do array serão processados;
+                done: (Function) Função a ser executada após o término do processamento;
         */
         X.processArray = obj => {
             setTimeout(() => {
-                if (obj._percent)
-                    X.percentageRender(obj._percent, 100 - ((obj._array.length * 100) / obj._length));
-                obj._array.splice(0, Math.ceil(obj._length * 0.1)).forEach(x => obj._process(x));
-                if (obj._array.length > 0)
+                if (obj.percent)
+                    X.percentageRender(obj.percent, 100 - ((obj.array.length * 100) / obj.length));
+                obj.array.splice(0, Math.ceil(obj.length * 0.1)).forEach(x => obj.process(x));
+                if (obj.array.length > 0)
                     setTimeout(X.processArray(obj));
-                else if (obj._done)
-                    obj._done();
+                else if (obj.done)
+                    obj.done();
             });
         };
 
@@ -814,10 +834,10 @@ X = Xand = Xandelier = (function () {
         Retorno: (Int) Número fatorado;
         */
         X.factorial = number => number ? number * X.factorial(number - 1) : 1;
-    })();
+    }
 
     ///////////////////////////////////////////////DOM/////////////////////////////////////////////////
-    (function () {
+    {
         /*
         Parametros:
             element: (String OU HtmlElement) String com o id do Elemento OU Elemento a ser mostrado ou escondido;
@@ -828,7 +848,7 @@ X = Xand = Xandelier = (function () {
         Retorno: (String) Se não for informado o parametro show então o função retorna o display do Elemento enviado;
         */
         X.show = (element, show, delay, callback) => {
-            element = typeof element === "string" ? document.getElementById(element) : element;
+            element = X.get(element).toHTMLElement();
             if (show === undefined) return element.style.display;
             if (delay === undefined) element.style.display = show ? "block" : "none";
             else {
@@ -846,13 +866,84 @@ X = Xand = Xandelier = (function () {
             }
         };
 
+        X.get = (id) => typeof id === "string" ? document.getElementById(id) : id;
+
+        X.XElement = class {
+            constructor(tagName, config = {}, child = []) {
+                this.children = [];
+                this.HTMLElement = null;
+
+                this.tagName = tagName;
+                this.vConfig = config;
+                this.append(child);
+            }
+
+            config(config) {
+                if (this.HTMLElement)
+                    this.HTMLElement.config(config);
+
+                Object.assign(this.vConfig, config);
+
+                return this;
+            }
+
+            append(child, config) {
+                if (Array.isArray(child))
+                    child.forEach(c => this.append(c, config));
+                else {
+                    child = typeof child === "string" ? X.createElement(child, config) : child;
+
+                    this.children.push(child);
+                }
+
+                return this;
+            }
+
+            toHTMLElement() {
+                if (!this.HTMLElement)
+                    this.HTMLElement = document.createElement(this.tagName).append(this.children);
+
+                return this.HTMLElement.config(this.vConfig);
+            }
+
+            getElementsByTagName(tagName) {
+                return this._getElementsByTagName(this, tagName);
+            }
+
+            _getElementsByTagName(el, tagName) {
+                let result = [];
+
+                if (el) {
+                    if (el.tagName.toUpperCase() === tagName.toUpperCase())
+                        result.push(el);
+
+                    el.children.forEach(c => result = [...result, ...this._getElementsByTagName(c, tagName)]);
+                }
+
+                return result;
+            }
+        };
+
+        X.XElement.useVirtualDom = true;
+
         /*
         Parametros:
             tagName: (String) Tag do novo elemento;
             config:  (Objeto) Objeto com as configurações do Elemento (ver config);
+            child:   (String OU HtmlElement OU XElement) String com o que o Elemento terá como texto interno OU o Elemento filho;
         Retorno: (Element) Elemento;
         */
-        X.createElement = (tagName, config) => document.createElement(tagName).config(config);
+        X.createElement = function (tagName, config = {}, child) {
+            if (typeof child === "string") {
+                config.innerHTML = child;
+                child = false;
+            }
+
+            if (X.XElement.useVirtualDom)
+                return new X.XElement(tagName, config, child);
+
+            return document.createElement(tagName).config(config).append(child);
+        };
 
         /*
         Parametros:
@@ -861,7 +952,7 @@ X = Xand = Xandelier = (function () {
         Retorno: (Element) Progress Bar;
         */
         X.percentageRender = (element, value) => {
-            element = typeof element === "string" ? document.getElementById(element) : element;
+            element = X.get(element);
             return element.config({
                 Swidth: `${value}%`,
                 innerHTML: `${Math.round(value)}%`,
@@ -878,13 +969,13 @@ X = Xand = Xandelier = (function () {
         X.setLayout = (layoutPath, containerId, callback) => {
             const containerContent = document.documentElement.innerHTML;
             X.ajax({
-                _path: layoutPath,
-                _done: (data) => {
+                path: layoutPath,
+                done: (data) => {
                     document.documentElement.innerHTML = data;
                     document.getElementById(containerId).innerHTML = containerContent;
                     if (callback) callback();
                 },
-                _error: (request, textStatus, error) => {
+                error: (request, textStatus, error) => {
                     X.modal.alert(`Request Failed: ${textStatus}, ${error}`);
                 }
             });
@@ -892,7 +983,8 @@ X = Xand = Xandelier = (function () {
 
         X.modal = (function () {
             const modalDelay = 10,
-                divBackdrop = X.createElement("DIV", { className: "modal-backdrop fade show" });
+                divBackdrop = X.createElement("DIV", { className: "modal-backdrop fade show" }),
+                elementsMap = {};
 
             let modalElement = null;
 
@@ -919,88 +1011,97 @@ X = Xand = Xandelier = (function () {
             }
 
             return function (id, modalConfig = {}) {
-                modalElement = typeof id === "string" ? document.getElementById(id) : id;
+                modalElement = typeof id == "string" ? elementsMap[id] : id;
                 if (!modalElement) {
-                    if (!modalConfig.hasOwnProperty("_CloseBtnText")) modalConfig._CloseBtnText = "x";
+                    if (!modalConfig.hasOwnProperty("closeBtnText"))
+                        modalConfig.closeBtnText = "x";
 
-                    if (!modalConfig.hasOwnProperty("_CloseBtn"))
-                        modalConfig._CloseBtn = X.createElement("BUTTON", {
+                    if (!modalConfig.hasOwnProperty("closeBtn"))
+                        modalConfig.closeBtn = X.createElement("BUTTON", {
                             className: "close",
                             Fclick: closeModal,
                             "Adata-dismiss": "modal",
                             "Adata-label": "Close"
                         }).append("SPAN", {
                             "Aaria-hidden": "true",
-                            innerHTML: modalConfig._CloseBtnText
+                            innerHTML: modalConfig.closeBtnText
                         });
 
-                    if (!modalConfig.hasOwnProperty("_foot"))
-                        modalConfig._foot = X.createElement("BUTTON", {
+                    if (!modalConfig.hasOwnProperty("footer"))
+                        modalConfig.footer = X.createElement("BUTTON", {
                             className: "btn btn-secondary",
                             Fclick: closeModal,
                             innerHTML: "Fechar"
                         });
 
-                    modalElement = document.body
-                        .appendChild(X.createElement("DIV", configConfig(modalConfig, "_configModal", { id, className: "modal fade", Atabindex: "-1", Arole: "dialog" }))
-                            .append(X.createElement("DIV", configConfig(modalConfig, "_configDialog", { className: "modal-dialog", Arole: "document" }))
-                                .append(X.createElement("DIV", configConfig(modalConfig, "_configContent", { className: "modal-content" }))
-                                    .append(X.createElement("DIV", configConfig(modalConfig, "_configHead", { className: "modal-header" }))
-                                        .append("H5", configConfig(modalConfig, "_configTitle", { innerHTML: modalConfig._titleText || "", className: "modal-title" }))
-                                        .append(modalConfig._CloseBtn))
-                                    .append(X.createElement("DIV", configConfig(modalConfig, "_configBody", { className: "modal-body" }))
-                                        .append(modalConfig._body))
-                                    .append(X.createElement("DIV", configConfig(modalConfig, "_configFoot", { className: "modal-footer" }))
-                                        .append(modalConfig._foot)
-                                    )
-                                )
+                    modalElement = X.createElement("DIV", configConfig(modalConfig, "configModal", { id, className: "modal fade", Atabindex: "-1", Arole: "dialog" }))
+                        .append(X.createElement("DIV", configConfig(modalConfig, "configDialog", { className: "modal-dialog", Arole: "document" }))
+                            .append(X.createElement("DIV", configConfig(modalConfig, "configContent", { className: "modal-content" }))
+                                .append(X.createElement("DIV", configConfig(modalConfig, "configHead", { className: "modal-header" }))
+                                    .append("H5", configConfig(modalConfig, "configTitle", { innerHTML: modalConfig.titleText || "", className: "modal-title" }))
+                                    .append(modalConfig.closeBtn))
+                                .append(X.createElement("DIV", configConfig(modalConfig, "configBody", { className: "modal-body" }), modalConfig.body))
+                                .append(X.createElement("DIV", configConfig(modalConfig, "configFooter", { className: "modal-footer" }), modalConfig.footer))
                             )
                         );
 
-                    modalElement.toggle = (content, toggleConfig = {}) => {
-                        if (content === undefined) content = !modalElement.isShown;
-                        else modalElement.isShown = !!content;
-                        if (!document.body.classList.contains("modal-open")) { //if para verificar data-toggle
+                    elementsMap[id] = modalElement;
+
+                    let isShown = false;
+                    modalElement.toggle = modalConfig.toggle = (content, toggleConfig = {}) => {
+                        if (content === undefined)
+                            content = !isShown;
+                        else
+                            isShown = !!content;
+
+                        if (!modalElement.HTMLElement)
+                            document.body.append(modalElement);
+
+                        const element = modalElement.toHTMLElement();
+                        if (!document.body.containsClass("modal-open")) { //if para verificar data-toggle
                             if (content) {
-                                document.body.appendChild(divBackdrop);
-                                modalElement.classList.add("in");
-                                X.show(modalElement, true, toggleConfig._delay || modalDelay);
-                                if (toggleConfig._clickOut === true)
+                                document.body.append(divBackdrop);
+                                element.addClass("in");
+                                X.show(element, true, toggleConfig.delay || modalDelay);
+                                if (toggleConfig.clickOut === true)
                                     document.body.addEventListener("click", clickOutsideModal);
                             } else {
-                                X.show(modalElement, false, toggleConfig._delay || modalDelay, () => {
-                                    document.body.removeChild(divBackdrop);
-                                    modalElement.classList.remove("in");
+                                X.show(element, false, toggleConfig.delay || modalDelay, () => {
+                                    document.body.remove(divBackdrop);
+                                    element.removeClass("in");
                                     document.body.removeEventListener("click", clickOutsideModal);
                                 });
                             }
                         } else
-                            document.body.classList.remove("modal-open");
-                        if (!content && modalElement.onHideModal) modalElement.onHideModal();
+                            document.body.removeClass("modal-open");
+
+                        if (!content && modalConfig.onHideModal)
+                            modalConfig.onHideModal();
                     };
 
-                    modalConfig.isShown = false;
+                    isShown = false;
                 }
-                return modalElement.config(modalConfig);
+
+                return modalElement;
             };
         })();
 
         X.modal.alert = function (text, title) {
             const alertModal = X.modal("x-modal-alert", {
-                _configContent: { Swidth: "50%", Smargin: "0px auto 0px auto" },
-                _configHead: { Sborder: "none" },
-                _configFoot: { Sborder: "none", SmarginTop: "0px" },
-                _titleText: title,
-                _body: X.createElement("LABEL"),
-                _foot: X.createElement("BUTTON", {
+                configContent: { Swidth: "50%", Smargin: "0px auto 0px auto" },
+                configHead: { Sborder: "none" },
+                configFooter: { Sborder: "none", SmarginTop: "0px" },
+                titleText: title,
+                body: X.createElement("LABEL"),
+                footer: X.createElement("BUTTON", {
                     Fclick: () => alertModal.toggle(false),
                     innerHTML: "OK",
                     className: "btn btn-default"
                 })
             });
 
-            alertModal.getElementsByTagName("LABEL")[0].innerHTML = text;
-            alertModal.toggle(true, { _clickOut: true });
+            alertModal.getElementsByTagName("LABEL")[0].config({ innerHTML: text });
+            alertModal.toggle(true, { clickOut: true });
             return alertModal;
         };
 
@@ -1008,35 +1109,37 @@ X = Xand = Xandelier = (function () {
             let okClick = null,
                 cancelClick = null;
 
-            return function (text, func, footConfig = {}) {
+            return function (text, func, footerConfig = {}) {
                 const confirmModal = X.modal("x-modal-confirm", {
-                        _CloseBtn: false,
-                        _configHead: { Sdisplay: "none" },
-                        _body: X.createElement("LABEL"),
-                        _foot: [
-                            X.createElement("BUTTON", footConfig._cancelButton || {
-                                innerHTML: "Cancela", className: "btn btn-secondary"
-                            }),
-                            X.createElement("BUTTON", footConfig._okButton || {
-                                innerHTML: "OK", className: "btn btn-primary"
-                            })]
-                    }),
+                    closeBtn: false,
+                    configHead: { Sdisplay: "none" },
+                    body: X.createElement("LABEL"),
+                    footer: [
+                        X.createElement("BUTTON", footerConfig.cancelButton || {
+                            innerHTML: "Cancela", className: "btn btn-secondary"
+                        }),
+                        X.createElement("BUTTON", footerConfig.okButton || {
+                            innerHTML: "OK", className: "btn btn-primary"
+                        })]
+                }),
                     [cancelBtn, okBtn] = confirmModal.getElementsByTagName("BUTTON");
 
-                cancelBtn.removeEventListener("click", cancelClick);
-                okBtn.removeEventListener("click", okClick);
+                cancelBtn.config({ Rclick: cancelClick });
+                okBtn.config({ Rclick: okClick });
 
-                confirmModal.getElementsByTagName("LABEL")[0].innerHTML = text;
+                confirmModal.getElementsByTagName("LABEL")[0].config({ innerHTML: text });
                 cancelClick = function () {
                     confirmModal.toggle(false);
                     func(false);
                 };
-                cancelBtn.addEventListener("click", cancelClick);
+
                 okClick = function () {
                     confirmModal.toggle(false);
                     func(true);
                 };
-                okBtn.addEventListener("click", okClick);
+
+                cancelBtn.config({ Fclick: cancelClick });
+                okBtn.config({ Fclick: okClick });
 
                 confirmModal.toggle(true);
                 return confirmModal;
@@ -1048,33 +1151,33 @@ X = Xand = Xandelier = (function () {
 
             return function (text, func) {
                 const promptModal = X.modal("x-modal-prompt", {
-                        _foot: false,
-                        _CloseBtn: false,
-                        _configHead: { Sdisplay: "none" },
-                        _configBody: { SpaddingTop: "none" },
-                        _configFoot: { Sdisplay: "none" },
-                        _body: [
-                            X.createElement("LABEL"),
-                            X.createElement("BR"),
-                            X.createElement("DIV", { className: "input-group" })
-                                .append("INPUT", { type: "text", className: "form-control", SmaxWidth: "none" })
-                                .append(X.createElement("SPAN", { className: "input-group-btn" })
-                                    .append("BUTTON", { className: "btn btn-defaul", type: "button", innerHTML: "OK", Sborder: "none" })
-                                )
-                        ]
-                    }),
+                    footer: false,
+                    closeBtn: false,
+                    configHead: { Sdisplay: "none" },
+                    configBody: { SpaddingTop: "none" },
+                    configFooter: { Sdisplay: "none" },
+                    body: [
+                        X.createElement("LABEL"),
+                        X.createElement("BR"),
+                        X.createElement("DIV", { className: "input-group" })
+                            .append("INPUT", { type: "text", className: "form-control", SmaxWidth: "none" })
+                            .append(X.createElement("SPAN", { className: "input-group-btn" })
+                                .append("BUTTON", { className: "btn btn-defaul", type: "button", innerHTML: "OK", Sborder: "none" })
+                            )
+                    ]
+                }),
                     confirmBtn = promptModal.getElementsByTagName("BUTTON")[0],
                     input = promptModal.getElementsByTagName("INPUT")[0];
 
-                confirmBtn.removeEventListener("click", promptFunc);
+                confirmBtn.config({ Rclick: promptFunc });
 
-                promptModal.getElementsByTagName("LABEL")[0].innerHTML = text;
-                input.value = "";
+                promptModal.getElementsByTagName("LABEL")[0].config({ innerHTML: text });
+                input.config({ value: "" });
                 promptFunc = function () {
                     promptModal.toggle(false);
-                    func(input.value);
+                    func(input.HTMLElement.value);
                 };
-                confirmBtn.addEventListener("click", promptFunc);
+                confirmBtn.config({ Fclick: promptFunc });
                 promptModal.toggle(true);
                 return promptModal;
             };
@@ -1083,23 +1186,23 @@ X = Xand = Xandelier = (function () {
         /*
         Construtor:
             titleConfig: (Objeto) Objeto com as configurações do Title:
-                _style: (Objeto) Objeto com as configurações de estilo do Title;
-                _delay: (Float) Tempo em milisegundos de fade-in do Title. Default: 20;
-                _name: (String) Nome do atributo e do id do Elemento do Title. Default: data-x-title;
+                style: (Objeto) Objeto com as configurações de estilo do Title;
+                delay: (Float) Tempo em milisegundos de fade-in do Title. Default: 20;
+                name: (String) Nome do atributo e do id do Elemento do Title. Default: data-x-title;
         */
         X.title = function (titleConfig = {}) {
             const defaultTitleStyle = {
-                    padding: "3px",
-                    border: "1px solid black",
-                    "border-radius": "5px",
-                    "box-shadow": "2px 2px 5px grey",
-                    background: "white",
-                    color: "black",
-                    font: "normal 11px Verdana",
-                    "text-align": "left",
-                    position: "absolute",
-                    "z-index": 1000
-                },
+                padding: "3px",
+                border: "1px solid black",
+                "border-radius": "5px",
+                "box-shadow": "2px 2px 5px grey",
+                background: "white",
+                color: "black",
+                font: "normal 11px Verdana",
+                "text-align": "left",
+                position: "absolute",
+                "z-index": 1000
+            },
                 getPlace = (evt) => titleElement.config({ Sleft: `${evt.pageX + 12}px`, Stop: `${evt.pageY + 20}px` });
 
             let titleAttribute = "data-x-title",
@@ -1142,13 +1245,13 @@ X = Xand = Xandelier = (function () {
                 this.renderTitle();
             };
 
-            if (titleConfig._style)
-                Object.assign(defaultTitleStyle, titleConfig._style);
+            if (titleConfig.style)
+                Object.assign(defaultTitleStyle, titleConfig.style);
 
-            titleDelay = titleConfig._delay || titleDelay;
-            titleAttribute = titleConfig._name || titleAttribute;
+            titleDelay = titleConfig.delay || titleDelay;
+            titleAttribute = titleConfig.name || titleAttribute;
             let titleElement = document.getElementById(titleAttribute) ||
-                document.body.appendChild(X.createElement("DIV", {
+                document.body.append(X.createElement("DIV", {
                     id: titleAttribute, style: defaultTitleStyle
                 }));
         };
@@ -1273,9 +1376,9 @@ X = Xand = Xandelier = (function () {
 
             this.pause = pauseChrono;
 
-            element = typeof element === "string" ? document.getElementById(element) : element;
+            element = X.get(element);
         };
-    })();
+    }
 
     return X;
 })();
