@@ -356,7 +356,7 @@
 		Encode: encode
 	};
 
-	if (!!X)
+	if (typeof X != "undefined")
 		X.JSFuck = Xand.JSFuck = Xandelier.JSFuck = JSFuck;
 	else
 		window.JSFuck = JSFuck;
